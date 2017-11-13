@@ -1,0 +1,57 @@
+C51 COMPILER V9.53.0.0   ADS1000                                                           10/12/2016 10:14:24 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE ADS1000
+OBJECT MODULE PLACED IN ADS1000.OBJ
+COMPILER INVOKED BY: D:\ProgramFile\Keil_v5\C51\BIN\C51.EXE ADS1000.c OPTIMIZE(8,SPEED) DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include "ADS1000.h"
+   2          //#include "LCD.h"
+   3          
+   4          
+   5          void ADS1000_Init(void){
+   6   1      
+   7   1        uchar tmp[2];
+   8   1        I2C_rst();
+   9   1        I2C_initial();
+  10   1      
+  11   1        tmp[0] = Continuous_Conv_Cmd;
+  12   1        
+  13   1        I2C_write(TEMP_SENSOR_ADR, tmp, 1); //one-shot
+  14   1      }
+  15          
+  16          uint ADS1000_Read_Temp(){
+  17   1      
+  18   1        uchar tmp[3];
+  19   1        uint temp_result;
+  20   1        double cal;
+  21   1      
+  22   1        I2C_rst();
+  23   1        I2C_initial();
+  24   1        
+  25   1        I2C_read(TEMP_SENSOR_ADR, tmp, 3);
+  26   1        
+  27   1        temp_result = ((tmp[0] & 0x00ff)<< 8) | (tmp[1] & 0x00ff);      // 8bit & 16bit?
+  28   1        cal = temp_result;
+  29   1        temp_result = 300 - (cal - 1074.9 ) * 10000 / 6433; 
+  30   1         
+  31   1        return temp_result;
+  32   1      
+  33   1      }
+  34          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    134    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       9
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

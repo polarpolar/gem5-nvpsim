@@ -1,0 +1,54 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Project:</h2>
+D:\2017Spring\Transceiver-1020N-V2-NewBrd\Transceiver-1020N-V2-NewBrd\Transceiver.uvproj
+Project File Date:  11/09/2017
+
+<h2>Output:</h2>
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling Delay.c...
+compiling I2C.c...
+compiling LCD.c...
+compiling main_transmitter.c...
+CASE.H(79): warning C280: 'dat': unreferenced local variable
+CASE.H(79): warning C280: 'len': unreferenced local variable
+CASE.H(84): warning C280: 'a': unreferenced local variable
+MAIN_TRANSMITTER.C(111): warning C182: pointer to different objects
+MAIN_TRANSMITTER.C(114): warning C214: 'Argument': conversion: pointer to non-pointer
+compiling tmp100.c...
+compiling KXTJ9.c...
+compiling NVRF.c...
+compiling fftmisc.c...
+compiling fourierf.c...
+FOURIERF.C(99): warning C280: 'temp': unreferenced local variable
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_WAIT?DELAY
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_DELAYMS?DELAY
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?HT1621_INIT?LCD
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_LCD_SHOW?LCD
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_CRC_PACKET?MAIN_TRANSMITTER
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_SEND_MESSAGE_PREPARE?MAIN_TRANSMITTER
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_SEND_MESSAGE_16_ADD?MAIN_TRANSMITTER
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?NVRF_CONFIG?NVRF
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?DRILL_BUFFER?NVRF
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_NVRF_START?NVRF
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_PMU_CONF?NVRF
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_INDEX_TO_FREQUENCY?FFTMISC
+Program Size: data=15.1 xdata=512 code=9468
+creating hex file from "Transceiver"...
+"Transceiver" - 0 Error(s), 18 Warning(s).

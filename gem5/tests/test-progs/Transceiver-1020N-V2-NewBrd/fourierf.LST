@@ -1,0 +1,179 @@
+C51 COMPILER V9.00   FOURIERF                                                              11/10/2017 22:21:31 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE FOURIERF
+OBJECT MODULE PLACED IN fourierf.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE fourierf.c LARGE ROM(COMPACT) DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*============================================================================
+   2          
+   3              fourierf.c  -  Don Cross <dcross@intersrv.com>
+   4          
+   5              http://www.intersrv.com/~dcross/fft.html
+   6          
+   7              Contains definitions for doing Fourier transforms
+   8              and inverse Fourier transforms.
+   9          
+  10              This module performs operations on arrays of 'float'.
+  11          
+  12              Revision history:
+  13          
+  14          1998 September 19 [Don Cross]
+  15              Updated coding standards.
+  16              Improved efficiency of trig calculations.
+  17          
+  18          ============================================================================*/
+  19          
+  20          #include <stdlib.h>
+  21          #include <stdio.h>
+  22          
+  23          #include "fourier.h"
+  24          #include "ddcmath.h"
+  25          #include <math.h>
+  26          
+  27          #define CHECKPOINTER(p)  CheckPointer(p,#p)
+  28          
+  29          static void CheckPointer ( void *p, char *name )
+  30          {
+  31   1          if ( p == NULL )
+  32   1          {
+  33   2      //        fprintf ( stderr, "Error in fft_float():  %s == NULL\n", name );
+  34   2       //       exit(1);
+  35   2                      printf("%d", name);
+  36   2          }
+  37   1      }
+  38          
+  39          
+  40          void fft_float (
+  41              unsigned  NumSamples,
+  42              int       InverseTransform,
+  43              float    *RealIn,
+  44              float    *ImagIn,
+  45              float    *RealOut,
+  46              float    *ImagOut )
+  47          {
+  48   1          unsigned NumBits;    /* Number of bits needed to store indices */
+  49   1          unsigned i, j, k, n;
+  50   1          unsigned BlockSize, BlockEnd;
+  51   1      
+  52   1          double angle_numerator = 2.0 * DDC_PI;
+  53   1          double tr, ti;     /* temp real, temp imaginary */
+  54   1      
+  55   1          if ( !IsPowerOfTwo(NumSamples) )
+C51 COMPILER V9.00   FOURIERF                                                              11/10/2017 22:21:31 PAGE 2   
+
+  56   1          {
+  57   2           //   fprintf (
+  58   2        //          stderr,
+  59   2       //           "Error in fft():  NumSamples=%u is not power of two\n",
+  60   2         //         NumSamples );
+  61   2      
+  62   2          //    exit(1);
+  63   2          }
+  64   1      
+  65   1          if ( InverseTransform )
+  66   1              angle_numerator = -angle_numerator;
+  67   1      
+  68   1          CHECKPOINTER ( RealIn );
+  69   1          CHECKPOINTER ( RealOut );
+  70   1          CHECKPOINTER ( ImagOut );
+  71   1      
+  72   1          NumBits = NumberOfBitsNeeded ( NumSamples );
+  73   1      
+  74   1          /*
+  75   1          **   Do simultaneous data copy and bit-reversal ordering into outputs...
+  76   1          */
+  77   1      
+  78   1          for ( i=0; i < NumSamples; i++ )
+  79   1          {
+  80   2              j = ReverseBits ( i, NumBits );
+  81   2              RealOut[j] = RealIn[i];
+  82   2              ImagOut[j] = (ImagIn == NULL) ? 0.0 : ImagIn[i];
+  83   2          }
+  84   1      
+  85   1          /*
+  86   1          **   Do the FFT itself...
+  87   1          */
+  88   1      
+  89   1          BlockEnd = 1;
+  90   1          for ( BlockSize = 2; BlockSize <= NumSamples; BlockSize <<= 1 )
+  91   1          {
+  92   2              double delta_angle = angle_numerator / (double)BlockSize;
+  93   2              double sm2 = sin ( -2 * delta_angle );
+  94   2              double sm1 = sin ( -delta_angle );
+  95   2              double cm2 = cos ( -2 * delta_angle );
+  96   2              double cm1 = cos ( -delta_angle );
+  97   2              double w = 2 * cm1;
+  98   2              double ar[3], ai[3];
+  99   2              double temp;
+ 100   2      
+ 101   2              for ( i=0; i < NumSamples; i += BlockSize )
+ 102   2              {
+ 103   3                  ar[2] = cm2;
+ 104   3                  ar[1] = cm1;
+ 105   3      
+ 106   3                  ai[2] = sm2;
+ 107   3                  ai[1] = sm1;
+ 108   3      
+ 109   3                  for ( j=i, n=0; n < BlockEnd; j++, n++ )
+ 110   3                  {
+ 111   4                      ar[0] = w*ar[1] - ar[2];
+ 112   4                      ar[2] = ar[1];
+ 113   4                      ar[1] = ar[0];
+ 114   4      
+ 115   4                      ai[0] = w*ai[1] - ai[2];
+ 116   4                      ai[2] = ai[1];
+ 117   4                      ai[1] = ai[0];
+C51 COMPILER V9.00   FOURIERF                                                              11/10/2017 22:21:31 PAGE 3   
+
+ 118   4      
+ 119   4                      k = j + BlockEnd;
+ 120   4                      tr = ar[0]*RealOut[k] - ai[0]*ImagOut[k];
+ 121   4                      ti = ar[0]*ImagOut[k] + ai[0]*RealOut[k];
+ 122   4      
+ 123   4                      RealOut[k] = RealOut[j] - tr;
+ 124   4                      ImagOut[k] = ImagOut[j] - ti;
+ 125   4      
+ 126   4                      RealOut[j] += tr;
+ 127   4                      ImagOut[j] += ti;
+ 128   4                  }
+ 129   3              }
+ 130   2      
+ 131   2              BlockEnd = BlockSize;
+ 132   2          }
+ 133   1      
+ 134   1          /*
+ 135   1          **   Need to normalize if inverse transform...
+ 136   1          */
+ 137   1      
+ 138   1          if ( InverseTransform )
+ 139   1          {
+ 140   2              double denom = (double)NumSamples;
+ 141   2      
+ 142   2              for ( i=0; i < NumSamples; i++ )
+ 143   2              {
+ 144   3                  RealOut[i] /= denom;
+ 145   3                  ImagOut[i] /= denom;
+ 146   3              }
+ 147   2          }
+ 148   1      }
+*** WARNING C280 IN LINE 99 OF FOURIERF.C: 'temp': unreferenced local variable
+ 149          
+ 150          
+ 151          /*--- end of file fourierf.c ---*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1936    ----
+   CONSTANT SIZE    =     26    ----
+   XDATA SIZE       =   ----     100
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

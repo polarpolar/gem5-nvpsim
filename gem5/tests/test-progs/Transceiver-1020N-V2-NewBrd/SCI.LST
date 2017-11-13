@@ -1,0 +1,250 @@
+C51 COMPILER V9.53.0.0   SCI                                                               06/17/2017 15:19:19 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE SCI
+OBJECT MODULE PLACED IN SCI.OBJ
+COMPILER INVOKED BY: D:\ProgramFile\Keil_v5\C51\BIN\C51.EXE SCI.c LARGE ROM(COMPACT) OPTIMIZE(8,SPEED) DEBUG OBJECTEXTEN
+                    -D TABS(2)
+
+line level    source
+
+   1          #include "SCI.h"
+   2          
+   3          void ResetWishbone() {
+   4   1        P1=0x38;          //复位总线
+   5   1        wait(10,100);       //几毫秒
+   6   1        P1=0x35;          //设置分频为最大
+   7   1        wait(1,100);
+   8   1        P0=0x00;                   
+   9   1        P1=0x34;          //设置CRTL寄存器
+  10   1        wait(1,100);
+  11   1        P0=0x90;
+  12   1        wait(1,100);
+  13   1      }
+  14          
+  15          void SCI_Init(){
+  16   1                              //ML7266初始化方法
+  17   1          /**************************/
+  18   1        REGPD=0;
+  19   1        SINTN=1;
+  20   1        wait(1,100);                //等待近百毫秒
+  21   1        RESET=0;                  //异步复位
+  22   1        wait(1,100);                //等待毫秒
+  23   1        RESET=1;
+  24   1        wait(1,100);                //芯片进入掉电状态，此时可以写读configuration registers和SXOSCON Command Strobe
+  25   1      
+  26   1        /**************************/
+  27   1      }
+  28          
+  29          unsigned char send_char(unsigned char c){
+  30   1        unsigned char receive;
+  31   1      
+  32   1        P1 = 0xC0; //11000000 // send P0's value to SPI Core 's Add : SPI_TX_0  and wait to be sent
+  33   1        P0 = c;  //load data tp P0
+  34   1      
+  35   1        P1 = 0x00; 
+  36   1        P0 = 0x88;  //10001000  // load instruction to P0
+  37   1      
+  38   1        P1 = 0xC4;  //1100100 // send the instruction to SPI Core's Add : SPI_CTRL
+  39   1        P0 = 0x8c;
+  40   1      
+  41   1        do{
+  42   2          P1 = 0x44; //01000100 // load the CTRL register
+  43   2        }
+  44   1        while(busy);  // wait until finish
+  45   1        
+  46   1        P1=0x40;
+  47   1        wait(1,1);
+  48   1        receive=P0;
+  49   1        return(receive);
+  50   1      }
+  51          
+  52          /*unsigned char send_char(unsigned char c){
+  53            unsigned char receive;
+  54          
+C51 COMPILER V9.53.0.0   SCI                                                               06/17/2017 15:19:19 PAGE 2   
+
+  55            P1 = 0x30;
+  56            P0 = c;  
+  57          
+  58            P1 = 0x00;
+  59            P0 = 0x10;
+  60          
+  61            P1 = 0x34;
+  62            P0 = 0x34;
+  63          
+  64            do{
+  65              P1 = 0x14;
+  66            }
+  67            while(busy);  
+  68            
+  69            P1=0x10;
+  70            wait(1,1);
+  71            receive=P0;
+  72            return(receive);
+  73          }*/
+  74          /*
+  75          void ReadRegister(unsigned char add) {
+  76            
+  77            add=0x40 | add;
+  78            ResetWishbone();
+  79            CSn=0;
+  80            wait(1,100);
+  81            send_char(add);//读寄存器，此后SI脚为无效状态
+  82            wait(1,100);
+  83            RSB=ByteRead;
+  84            wait(1,100);
+  85            send_char(0x00);
+  86            wait(1,100);
+  87            MSB=ByteRead;
+  88            send_char(0x00);
+  89            wait(1,100);
+  90            CSn=1;
+  91            wait(1,100);
+  92            LSB=ByteRead;
+  93            wait(1,100);
+  94          }
+  95          
+  96          void WriteRegister(unsigned char add) {
+  97            ResetWishbone();
+  98            CSn=0;
+  99            wait(1,100);
+ 100            send_char(add);//写寄存器
+ 101            wait(1,100);
+ 102            RSB=ByteRead; 
+ 103            wait(1,100);
+ 104            send_char(MSB);
+ 105            wait(1,100);
+ 106            send_char(LSB);
+ 107            wait(1,100);
+ 108            CSn=1;  
+ 109            wait(1,100);
+ 110          }
+ 111          
+ 112          void Oscillator(){//开启晶振
+ 113            while( (ByteRead&0x40)!=0x40){
+ 114              CSn=0;
+ 115              send_char(0x01);
+ 116              wait(1,100);  
+C51 COMPILER V9.53.0.0   SCI                                                               06/17/2017 15:19:19 PAGE 3   
+
+ 117              CSn=1;  
+ 118              wait(1,100);  
+ 119            }
+ 120          }
+ 121          
+ 122          void SET_Freq() {//设置发送频率
+ 123            ReadRegister(FSCTRL);
+ 124            MSB |= 0x01;
+ 125            LSB = 0x65+5*(CHANNEL-11);      
+ 126            WriteRegister(FSCTRL);
+ 127          }
+ 128          
+ 129          void SET_CCA_THR(unsigned char CCA_thr) {//设置CCA阈值
+ 130            
+ 131            CCA_thr=CCA_thr | 0x80;
+ 132            ReadRegister(RSSI);
+ 133            MSB=CCA_thr; //lsb 保持不变
+ 134            WriteRegister(MDMCTRL0);
+ 135            wait(1,100);
+ 136            ReadRegister(MDMCTRL0);
+ 137            wait(1,100);
+ 138          }
+ 139          
+ 140          void SET_CRC(unsigned char CRC) {
+ 141            CRC=CRC & 0x20;
+ 142            ReadRegister(MDMCTRL0);
+ 143            LSB=LSB | CRC;
+ 144            WriteRegister(MDMCTRL0);
+ 145            wait(1,100);
+ 146          }
+ 147          
+ 148          void OFF_AddressDecode() {//关闭地址译码
+ 149              //设置无地址认证
+ 150            ReadRegister(MDMCTRL0);
+ 151            MSB = MSB & 0xF7;
+ 152            WriteRegister(MDMCTRL0);
+ 153            wait(1,100);
+ 154          }
+ 155          
+ 156          void Command(unsigned char command){
+ 157            ResetWishbone();
+ 158            CSn=0;
+ 159            wait(1,100);
+ 160            send_char(command);
+ 161            wait(1,100);
+ 162            RSB=ByteRead;
+ 163            wait(1,100);
+ 164            CSn=1;
+ 165            wait(1,100);
+ 166          }
+ 167          
+ 168          void WriteTXFIFO(unsigned char length,unsigned int d) {
+ 169          
+ 170            ResetWishbone();
+ 171            CSn=0;
+ 172            wait(1,10);
+ 173            send_char(0x3E);//写FIFO
+ 174            wait(1,100);
+ 175            send_char(length);
+ 176            wait(1,100);
+ 177            send_char(d>>8);
+ 178            wait(1,100);
+C51 COMPILER V9.53.0.0   SCI                                                               06/17/2017 15:19:19 PAGE 4   
+
+ 179            send_char(d);
+ 180            wait(1,100);
+ 181            send_char(0x00);
+ 182            wait(1,100);
+ 183            send_char(0x00);
+ 184            wait(1,100);
+ 185            CSn=1;  
+ 186            wait(1,10);
+ 187          }
+ 188          
+ 189          
+ 190          void ReadRXFIFO(void) {
+ 191            ResetWishbone();
+ 192            CSn=0;
+ 193            wait(1,100);
+ 194            send_char(0x3F);//读FIFO
+ 195            RSB=ByteRead;
+ 196            wait(1,100);  
+ 197            CSn=1;  
+ 198            wait(1,100);
+ 199          }
+ 200          
+ 201          void ReadRam(unsigned char ramAdd,unsigned char bank) {
+ 202            ResetWishbone();
+ 203            ramAdd=ramAdd | 0x80;
+ 204            bank=(bank<<6);
+ 205            bank=bank | 0x20;
+ 206            CSn=0;
+ 207            wait(1,100);
+ 208            send_char(ramAdd);
+ 209            wait(1,100);
+ 210            RSB=ByteRead;
+ 211            wait(1,100);
+ 212            send_char(bank);
+ 213            wait(1,100);
+ 214            send_char(0x00);
+ 215            wait(1,100);
+ 216            CSn=1;  
+ 217            MSB=ByteRead;
+ 218            wait(1,100);
+ 219          }
+ 220          */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    138    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

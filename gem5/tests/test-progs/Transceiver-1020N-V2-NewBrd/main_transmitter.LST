@@ -1,0 +1,150 @@
+C51 COMPILER V9.00   MAIN_TRANSMITTER                                                      11/10/2017 22:21:30 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MAIN_TRANSMITTER
+OBJECT MODULE PLACED IN main_transmitter.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE main_transmitter.c LARGE ROM(COMPACT) DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <REG51.H>
+   2          #include <stdio.h>
+   3          #include "I2C.h"
+   4          #include "Delay.h"
+   5          #include "LCD.h"
+   6          #include "KXTJ9.h"
+   7          #include "tmp100.h"
+   8          #include "NVRF.h"
+   9          #include "case.h"
+*** WARNING C280 IN LINE 79 OF CASE.H: 'dat': unreferenced local variable
+*** WARNING C280 IN LINE 79 OF CASE.H: 'len': unreferenced local variable
+*** WARNING C280 IN LINE 84 OF CASE.H: 'a': unreferenced local variable
+  10          #include "fourier.h"
+  11          
+  12          
+  13          //#define LCD_display // comment this line to disable LCD display
+  14          //#define LCD_display_flag // comment this line to disable flag on LCD display
+  15          #define LCD_display_temp // comment this line to disable temp data on LCD display
+  16          //#define LCD_display_acm // comment this line to disable acm data on LCD display
+  17          
+  18          void main()
+  19          {   
+  20   1              int     acc_x,acc_y,acc_z;
+  21   1              int tmp;
+  22   1              unsigned char i;
+  23   1              float ImagIn[16]={0};
+  24   1              float ImagOut[16];
+  25   1              float RealOut[16];      
+  26   1                                      
+  27   1      //      #ifdef LCD_display
+  28   1      //        Ht1621_Init();                                // LCD display initialization
+  29   1      //      #endif
+  30   1      //      #ifdef LCD_display_flag
+  31   1      //               LCD_show(0xAAAA);
+  32   1      //               DelayMS(1000);
+  33   1       // #endif
+  34   1              
+  35   1      //      while(1)
+  36   1      //      {
+  37   1      
+  38   1      
+  39   1      
+  40   1      /*
+  41   1              
+  42   1                      for(i=0;i<PNum;i++)
+  43   1                      {
+  44   1                       payload[i]=0xAAAA;
+  45   1                      }
+  46   1                      
+  47   1                      // initialization of NVRF module
+  48   1                      nvrf_config();        // NVRF module
+  49   1                      
+  50   1                      #ifdef LCD_display_flag
+  51   1                       LCD_show(0xAABB);
+  52   1                       DelayMS(1000);
+C51 COMPILER V9.00   MAIN_TRANSMITTER                                                      11/10/2017 22:21:30 PAGE 2   
+
+  53   1          #endif
+  54   1                      
+  55   1      
+  56   1      
+  57   1      */              
+  58   1      //1. Tmp Sensor
+  59   1                      // initialization of Temp Sensor
+  60   1                      tmpInit();           //initialization of tmp100                 
+  61   1                      tmpSetRes(3);        //Set resolution of tmp100: 12bits
+  62   1                      
+  63   1                      
+  64   1                      // data read from Temp Sensor
+  65   1                      tmpGetTmpCont(&tmp);
+  66   1                      payload[0]=(uchar)((tmp&0xFF00)>>8);
+  67   1                      payload[1]=(uchar)(tmp&0x00FF);
+  68   1      
+  69   1      //2. ACM Sensor         
+  70   1                      
+  71   1                      // initialization of ACM Sensor                         
+  72   1                      KXTJ9_Init();                                 // ACM Sensor                     
+  73   1                      KXTJ9_Set_Resolution(1);        // high res
+  74   1                      KXTJ9_Set_Range(2);                       // -2g -- +2g 
+  75   1                      
+  76   1                      // data read from ACM Sensor
+  77   1                      for(i=1;i<=ANum;i++)
+  78   1                      {
+  79   2                                      KXTJ9_Get_Acceleration(&acc_x, &acc_y, &acc_z);//wait(1,100);
+  80   2                                      payload[6*i-4]=(uchar)((acc_x&0xFF00)>>8);
+  81   2                                      payload[6*i-3]=(uchar)(acc_x&0x00FF);
+  82   2                                      payload[6*i-2]=(uchar)((acc_y&0xFF00)>>8);
+  83   2                                      payload[6*i-1]=(uchar)(acc_y&0x00FF);
+  84   2                                      payload[6*i]=(uchar)((acc_z&0xFF00)>>8);
+  85   2                                      payload[6*i+1]=(uchar)(acc_z&0x00FF);
+  86   2                      }
+  87   1                      
+  88   1              //      drill_buffer();
+  89   1              //      DelayMS(100);
+  90   1              //      nvrf_start(PNum,0);
+  91   1              //      DelayMS(200);
+  92   1                      
+  93   1                      
+  94   1              //      tmpInit();           //initialization of tmp100                 
+  95   1              //      tmpSetRes(3);        //Set resolution of tmp100: 12bits
+  96   1              //      
+  97   1      //              #ifdef LCD_display_temp
+  98   1      //              LCD_show(0xEEEE);
+  99   1      //              DelayMS(1000);
+ 100   1       //     #endif
+ 101   1                      
+ 102   1      
+ 103   1                      tmpGetTmpCont(&tmp);
+ 104   1                      payload[0]=(uchar)((tmp&0xFF00)>>8);
+ 105   1                      payload[1]=(uchar)(tmp&0x00FF);   
+ 106   1      
+ 107   1              
+ 108   1      //3. fft        
+ 109   1              //      float RealOut;
+ 110   1              //      float ImagOut;
+ 111   1                      fft_float (32,0,payload,ImagIn,RealOut,ImagOut);
+*** WARNING C182 IN LINE 111 OF MAIN_TRANSMITTER.C: pointer to different objects
+ 112   1      
+ 113   1      //4. encode
+C51 COMPILER V9.00   MAIN_TRANSMITTER                                                      11/10/2017 22:21:30 PAGE 3   
+
+ 114   1                      send_message(ImagOut);
+*** WARNING C214 IN LINE 114 OF MAIN_TRANSMITTER.C: 'Argument': conversion: pointer to non-pointer
+ 115   1      
+ 116   1      
+ 117   1      
+ 118   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    661    ----
+   CONSTANT SIZE    =     64    ----
+   XDATA SIZE       =    122     212
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  5 WARNING(S),  0 ERROR(S)

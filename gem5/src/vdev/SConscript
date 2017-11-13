@@ -1,0 +1,7 @@
+Import('*')
+
+Source('vdev.cc')
+
+SimObject('VirtualDevice.py')
+
+DebugFlag('VirtualDevice')

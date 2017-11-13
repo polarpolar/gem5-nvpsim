@@ -1,0 +1,396 @@
+C51 COMPILER V9.00   I2C                                                                   11/10/2017 22:21:30 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE I2C
+OBJECT MODULE PLACED IN I2C.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE I2C.c LARGE ROM(COMPACT) DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include"I2C.h"
+   2          //#include "LCD.h"
+   3          
+   4          void I2C_w(uchar sv_adr, uchar mem_adr, uchar dat[], uint cnt){ //slave adr 7 bit
+   5   1              
+   6   1              uint i;
+   7   1      
+   8   1              //////////////          TXR: transfer slave adr //////////////////
+   9   1              P1 = 0x54;
+  10   1              P0 = (sv_adr<<1)&(~0x01);
+  11   1              P1 = 0xD3;              //11010011,TXR
+  12   1              
+  13   1              //CR:start, write
+  14   1              P1 = 0x54;
+  15   1              P0 = 0x90;
+  16   1              P1 = 0xD4;              //11010100,CR
+  17   1              
+  18   1              //SR: wait tranfer over
+  19   1              P1 = 0x54;
+  20   1        //P2 = 0x00;          //must insert nop, P0 change after 2 cyc of P1
+  21   1              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+  22   1        while(TIP);
+  23   1        //P2 = 0x7e;          // flag
+  24   1              
+  25   1              
+  26   1              ///////////////   TXR: tranfer slave mem adr  ///////////////
+  27   1              P1 = 0x54;
+  28   1              P0 = mem_adr;
+  29   1              P1 = 0xD3;              //11010011,TXR
+  30   1              
+  31   1              //CR: write
+  32   1              P1 = 0x54;
+  33   1              P0 = 0x10;
+  34   1              P1 = 0xD4;              //11010100,CR
+  35   1              
+  36   1              //SR: wait tranfer over
+  37   1              P1 = 0x54;
+  38   1              //P2 = 0x00;
+  39   1              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+  40   1              while(TIP);
+  41   1              //P2 = 0xfe;                    // flag
+  42   1              
+  43   1              
+  44   1              //////////////          TXR: tranfer slave data         /////////////////
+  45   1              for(i=0;i<cnt-1;i++){
+  46   2                      //TXR:tranfer slave data(adr inc)
+  47   2                      P1 = 0x54;
+  48   2                      P0 = dat[i];
+  49   2                      P1 = 0xD3;              //11010011,TXR
+  50   2              
+  51   2                      //CR: write
+  52   2                      P1 = 0x54;
+  53   2                      P0 = 0x10;
+  54   2                      P1 = 0xD4;              //11010100,CR
+  55   2              
+C51 COMPILER V9.00   I2C                                                                   11/10/2017 22:21:30 PAGE 2   
+
+  56   2      
+  57   2                      //SR: wait tranfer over
+  58   2                      P1 = 0x54;
+  59   2                      //P2 = 0x00;
+  60   2                      myNOP();                //must insert nop, P0 change after 2 cyc of P1
+  61   2                      while(TIP);
+  62   2                      //P2 = 0xfe;            // flag
+  63   2              }
+  64   1              
+  65   1              //TXR: transfer slave data
+  66   1              P1 = 0x54;
+  67   1              P0 = dat[cnt-1];
+  68   1              P1 = 0xD3;              //11010011,TXR
+  69   1              
+  70   1              //CR: stop, write
+  71   1              P1 = 0x54;
+  72   1              P0 = 0x50;
+  73   1              P1 = 0xD4;              //11010100,CR
+  74   1              
+  75   1              //SR: wait tranfer over
+  76   1              P1 = 0x54;
+  77   1              //P2 = 0x00;
+  78   1              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+  79   1              while(TIP);
+  80   1              //P2 = 0xfc;                    // flag
+  81   1      }
+  82          
+  83          void I2C_r(uchar sv_adr, uchar mem_adr, uchar dat[], uint cnt){
+  84   1              uint i;
+  85   1              
+  86   1        //PRER set to 400kHz
+  87   1              //P1 = 0xD0;            //11010000,PRERlo
+  88   1              //P0 = 0x07;            
+  89   1              //P1 = 0x54;
+  90   1              //P0 = 0x00;
+  91   1              //P1 = 0xD1;            //11010001,PRERhi
+  92   1              
+  93   1              /////////////   TXR: transfer slave adr   //////////////////
+  94   1              P1 = 0x54;
+  95   1              P0 = (sv_adr<<1)&(~0x01);
+  96   1              P1 = 0xD3;              //11010011,TXR
+  97   1              
+  98   1              //CR: start, write
+  99   1              P1 = 0x54;
+ 100   1              P0 = 0x90;
+ 101   1              P1 = 0xD4;              //11010100,CR
+ 102   1              
+ 103   1              //SR: wait tranfer over
+ 104   1              P1 = 0x54;
+ 105   1              //P2 = 0x00;            
+ 106   1              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+ 107   1              while(TIP);
+ 108   1              //P2 = 0xDc;            // flag
+ 109   1              
+ 110   1      
+ 111   1              ////////////   TXR: slave mem adr   /////////////////////
+ 112   1              P1 = 0x54;
+ 113   1              P0 = mem_adr;
+ 114   1              P1 = 0xD3;              //11010011,TXR
+ 115   1              
+ 116   1              //CR: write
+ 117   1              P1 = 0x54;
+C51 COMPILER V9.00   I2C                                                                   11/10/2017 22:21:30 PAGE 3   
+
+ 118   1              P0 = 0x10;
+ 119   1              P1 = 0xD4;              //11010100,CR
+ 120   1              
+ 121   1              //SR: wait tranfer over
+ 122   1              P1 = 0x54;
+ 123   1              //P2 = 0x00;
+ 124   1              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+ 125   1              while(TIP);
+ 126   1              //P2 = 0xfc;            // flag
+ 127   1      
+ 128   1              
+ 129   1              //////////////          TXR: slave adr restart          ////////////////////
+ 130   1              P1 = 0x54;
+ 131   1              P0 = (sv_adr<<1)|(0x01);
+ 132   1              P1 = 0xD3;              //11010011,TXR
+ 133   1              
+ 134   1              //CR: restart, read
+ 135   1              P1 = 0x54;
+ 136   1              P0 = 0x90;
+ 137   1              P1 = 0xD4;              //11010100,CR
+ 138   1              
+ 139   1              //SR: wait tranfer over
+ 140   1              P1 = 0x54;
+ 141   1              //P2 = 0x00;
+ 142   1              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+ 143   1              while(TIP);
+ 144   1              //P2 = 0xDc;            // flag
+ 145   1      
+ 146   1              //////////////          Reading         /////////////////////
+ 147   1              for(i=0;i<cnt-1;i++){
+ 148   2      //              //CR:read,ack
+ 149   2      //              P1 = 0x54;
+ 150   2      //              P0 = 0x20;
+ 151   2      //              P1 = 0xD4;              
+ 152   2      //      
+ 153   2      //              //SR: wait tranfer over
+ 154   2      //              P1 = 0x54;
+ 155   2      //              P2 = 0x00;
+ 156   2      //              while(TIP);
+ 157   2      //              P2 = 0xfc;              // flag
+ 158   2      //      
+ 159   2      //              //RXR
+ 160   2      //              P1 = 0x53;
+ 161   2      //              P2 = 0x00;              // insert nop
+ 162   2      //              if(P0!=0x11)    P2 = 0xee;              // flag
+ 163   2                      
+ 164   2                      //CR:read,ack
+ 165   2              P1 = 0x54;
+ 166   2              P0 = 0x20;
+ 167   2              P1 = 0xD4;              
+ 168   2              
+ 169   2              //SR: wait tranfer over
+ 170   2              P1 = 0x54;
+ 171   2              //P2 = 0x00;
+ 172   2              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+ 173   2              while(TIP);
+ 174   2              //P2 = 0xfc;            // flag
+ 175   2              
+ 176   2              //RXR
+ 177   2              P1 = 0x53;
+ 178   2              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+ 179   2              //P2 = 0x00;
+C51 COMPILER V9.00   I2C                                                                   11/10/2017 22:21:30 PAGE 4   
+
+ 180   2              //if(P0!=0x11)  P2 = 0xee;              // flag
+ 181   2      
+ 182   2                      dat[i] = P0;
+ 183   2              }
+ 184   1              
+ 185   1      //      //CR:read,nack,stop
+ 186   1      //      P1 = 0x54;
+ 187   1      //      P0 = 0x68;
+ 188   1      //      P1 = 0xD4;              
+ 189   1      //      
+ 190   1      //      //SR: wait tranfer over
+ 191   1      //      P1 = 0x54;
+ 192   1      //      P2 = 0x00;
+ 193   1      //      while(TIP);
+ 194   1      //      P2 = 0xfc;              // flag
+ 195   1      //      
+ 196   1      //      //RXR
+ 197   1      //      P1 = 0x53;
+ 198   1      //      P2 = 0x00;
+ 199   1      //      if(P0!=0x33)    P2 = 0xee;                      // flag
+ 200   1      //      P2 = 0xf8;              // flag
+ 201   1              
+ 202   1                      //CR:read,nack,stop
+ 203   1              P1 = 0x54;
+ 204   1              P0 = 0x68;
+ 205   1              P1 = 0xD4;              
+ 206   1              
+ 207   1              //SR: wait tranfer over
+ 208   1              P1 = 0x54;
+ 209   1              //P2 = 0x00;
+ 210   1              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+ 211   1              while(TIP);
+ 212   1              //P2 = 0xfc;            // flag
+ 213   1              
+ 214   1              //RXR
+ 215   1              P1 = 0x53;
+ 216   1              myNOP();                //must insert nop, P0 change after 2 cyc of P1
+ 217   1              //P2 = 0x00;
+ 218   1              //if(P0!=0x33)  P2 = 0xee;                      // flag
+ 219   1              //P2 = 0xf8;            // flag
+ 220   1              
+ 221   1              dat[cnt-1] = P0;
+ 222   1      
+ 223   1      }
+ 224          
+ 225          void I2C_rst(){
+ 226   1              EA = 0;         // Set CPU status: interrupt disable
+ 227   1        //P2 = 0xff;  // flag  
+ 228   1              
+ 229   1              //////                  reset by wishbone    ////////
+ 230   1              P1 = 0x20;      //00100000
+ 231   1              //P2 = 0xfe;            // flag
+ 232   1              P1 = 0x00;
+ 233   1      }
+ 234          
+ 235          void I2C_initial(){
+ 236   1              //PRER set to 100kHz
+ 237   1              P1 = 0xD0;              //1101000,PRERlo
+ 238   1              P0 = 0x1F;              //PRERl0=1F
+ 239   1              P1 = 0x54;              //Read status
+ 240   1              P0 = 0x00;
+ 241   1              P1 = 0xD1;              //1101000,PRERhi
+C51 COMPILER V9.00   I2C                                                                   11/10/2017 22:21:30 PAGE 5   
+
+ 242   1      
+ 243   1              //CTR, enable
+ 244   1              P1 = 0x54;
+ 245   1              P0 = 0x80;
+ 246   1              P1 = 0xD2;              //11010010,CTR  
+ 247   1              P3CTRL=0xC0;    //switch P3[7],P3[6] to i2c port
+ 248   1      }
+ 249          
+ 250          
+ 251          /*
+ 252          void I2C_write(uchar sv_adr, uchar dat[], uint cnt){ //slave adr 7 bit
+ 253                  
+ 254                  uint i;
+ 255          
+ 256                  //////////////          TXR: transfer slave adr //////////////////
+ 257                  P1 = 0x54;
+ 258                  P0 = (sv_adr) &(~0x01);
+ 259                  P1 = 0x73;              //01_1_10_011,TXR
+ 260                  
+ 261                  //CR:start, write
+ 262                  P1 = 0x54;
+ 263                  P0 = 0x90;
+ 264                  P1 = 0x74;              //01_1_10_100,CR
+ 265                  
+ 266                  //SR: wait tranfer over
+ 267                  P1 = 0x54;
+ 268                  myNOP();                //must insert nop, P0 change after 2 cyc of P1
+ 269                  while(TIP);
+ 270                  
+ 271                  
+ 272                  
+ 273                  //////////////          TXR: tranfer slave data         /////////////////
+ 274                  for(i=0;i<cnt-1;i++){
+ 275                          //TXR:tranfer slave data(adr inc)
+ 276                          P1 = 0x54;
+ 277                          P0 = dat[i];
+ 278                          P1 = 0x73;              //01_1_10_011,TXR
+ 279                  
+ 280                          //CR: write
+ 281                          P1 = 0x54;
+ 282                          P0 = 0x10;
+ 283                          P1 = 0x74;              //01_1_10_100,CR
+ 284                  
+ 285                          //SR: wait tranfer over
+ 286                          P1 = 0x54;
+ 287                          myNOP();
+ 288                          while(TIP);
+ 289                  }
+ 290                  
+ 291                  //TXR: transfer slave data
+ 292                  P1 = 0x54;
+ 293                  P0 = dat[cnt-1];
+ 294                  P1 = 0x73;              //01_1_10_011,TXR
+ 295                  
+ 296                  //CR: stop, write
+ 297                  P1 = 0x54;
+ 298                  P0 = 0x50;
+ 299                  P1 = 0x74;              //01_1_10_100,CR
+ 300                  
+ 301                  //SR: wait tranfer over
+ 302                  P1 = 0x54;
+ 303                  myNOP();
+C51 COMPILER V9.00   I2C                                                                   11/10/2017 22:21:30 PAGE 6   
+
+ 304                  while(TIP);
+ 305          }
+ 306          
+ 307          void I2C_read(uchar sv_adr, uchar dat[], uint cnt){
+ 308                  uint i;
+ 309                  /////////////   TXR: transfer slave adr   //////////////////
+ 310                  P1 = 0x54;
+ 311                  P0 = (sv_adr)|(0x01);
+ 312                  P1 = 0x73;              //01_1_10_011,TXR
+ 313                  
+ 314                  //CR: start, write
+ 315                  P1 = 0x54;
+ 316                  P0 = 0x90;
+ 317                  P1 = 0x74;              //01_1_10_100,CR
+ 318                  
+ 319                  //SR: wait tranfer over
+ 320                  P1 = 0x54;
+ 321                  myNOP();                
+ 322                  while(TIP);
+ 323                  
+ 324          
+ 325                  //////////////          Reading         /////////////////////
+ 326                  for(i=0;i<cnt-1;i++){
+ 327                          //CR:read,ack
+ 328                          P1 = 0x54;
+ 329                          P0 = 0x20;
+ 330                          P1 = 0x74;              //01_1_10_100,CR
+ 331                  
+ 332                          //SR: wait tranfer over
+ 333                          P1 = 0x54;
+ 334                          myNOP();
+ 335                          while(TIP);
+ 336                  
+ 337                          //RXR
+ 338                          P1 = 0x53;
+ 339                          myNOP();
+ 340          
+ 341                          dat[i] = P0;
+ 342                  }
+ 343                  
+ 344                  //CR:read,nack,stop
+ 345                  P1 = 0x54;
+ 346                  P0 = 0x68;
+ 347                  P1 = 0x74;              //01_1_10_100,CR
+ 348                  
+ 349                  //SR: wait tranfer over
+ 350                  P1 = 0x54;
+ 351                  myNOP();
+ 352                  while(TIP);
+ 353                  
+ 354                  //RXR
+ 355                  P1 = 0x53;
+ 356                  myNOP();
+ 357                  
+ 358                  dat[cnt-1] = P0;
+ 359          
+ 360          } 
+ 361          */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    540    ----
+C51 COMPILER V9.00   I2C                                                                   11/10/2017 22:21:30 PAGE 7   
+
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      18
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
