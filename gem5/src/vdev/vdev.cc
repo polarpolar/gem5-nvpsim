@@ -8,8 +8,7 @@
 #include "debug/VirtualDevice.hh"
 #include "debug/MemoryAccess.hh"
 
-VirtualDevice::DevicePort::DevicePort(const std::string &_name,
-                                      VirtualDevice *_vdev)
+VirtualDevice::DevicePort::DevicePort(const std::string &_name, VirtualDevice *_vdev)
     : SlavePort(_name, _vdev), vdev(_vdev)
 {
 
@@ -85,6 +84,8 @@ VirtualDevice::init()
     cpu->registerVDev(delay_recover, id);
     DPRINTF(VirtualDevice, "Virtual Device started with range: %#lx - %#lx\n",
             range.start(), range.end());
+
+    state = STATE_POWEROFF;
 }
 
 void
@@ -92,6 +93,7 @@ VirtualDevice::triggerInterrupt()
 {
     /* Todo: add static of finish success. */
     DPRINTF(VirtualDevice, "Virtual device triggers an interrupt.\n");
+    execution_state = STATE_IDLE; // The virtual device enter/keep in the active status.
     finishSuccess();
     assert(*pmem & VDEV_WORK);
     /* Change register byte. */
@@ -122,12 +124,15 @@ VirtualDevice::access(PacketPtr pkt)
                     DPRINTF(VirtualDevice, "Request discarded!\n");
                 } else {
                     /* Request succeeds. */
+                    execution_state = STATE_ACTIVE; // The virtual device enter/keep in the active status.
                     DPRINTF(VirtualDevice, "Virtual Device starts working.\n");
                     /* Set the virtual device to working mode */
                     *pmem |= VDEV_WORK;
                     *pmem &= ~VDEV_FINISH;
                     /* Schedule interrupt. */
                     schedule(event_interrupt, curTick() + delay_set + delay_self);
+                    /* Energy consumption. */
+                    consumeEnergy(energy_consumed_per_cycle_vdev[ACTIVE] * ticksToCycles(delay_recover + delay_self))
                     cpu->virtualDeviceSet(delay_set);
                     cpu->virtualDeviceStart(id);
                 }
@@ -142,12 +147,28 @@ VirtualDevice::access(PacketPtr pkt)
     return 0;
 }
 
+void AtomicSimpleCPU::tick()
+{
+    switch(execution_state)
+    {
+        case STATE_POWEROFF:    DPRINTF(VirtualDevice, "Tick: state is POWER OFF.\n"); break;
+        case STATE_IDLE:             DPRINTF(VirtualDevice, "Tick: state is IDLE(SLEEP).\n"); break;
+        case STATE_ACTIVE:         DPRINTF(VirtualDevice, "Tick: state is ACTIVE.\n"); break;
+        default:    DPRINTF(VirtualDevice, "Tick: undefined state!\n", ); break;
+    }
+    
+    /** Energy consumption **/
+    consumeEnergy(energy_consumed_per_cycle_vdev[execution_state] * ticksToCycles(1));
+}
+
 int
 VirtualDevice::handleMsg(const EnergyMsg &msg)
 {
     DPRINTF(EnergyMgmt, "Device handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
     switch(msg.type) {
         case (int) SimpleEnergySM::POWEROFF:
+            /** Vdev shutdown **/
+            execution_state = STATE_POWEROFF;
             if (*pmem & VDEV_WORK) {
                 /* This should be handled if the device is on a task **/
                 assert(event_interrupt.scheduled());
@@ -156,14 +177,20 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
                 /* Calculate the remaining delay if the device is interruptable */
                 if (is_interruptable)
                     delay_remained = event_interrupt.when() - curTick();
+                else
+                    delay_remained = delay_set + delay_self;
                 deschedule(event_interrupt);
             }
             break;
         case (int) SimpleEnergySM::POWERON:
+            /** Vdev shutdown **/
+            execution_state = STATE_ACTIVE;
             if (*pmem & VDEV_WORK) {
                 assert(!event_interrupt.scheduled());
                 DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
                 schedule(event_interrupt, curTick() + delay_remained);
+                /** Energy consumption **/
+                consumeEnergy(energy_consumed_per_cycle_vdev[ACTIVE] * ticksToCycles(delay_remained));
             }
             break;
         default:

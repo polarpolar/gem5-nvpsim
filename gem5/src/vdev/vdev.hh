@@ -50,15 +50,17 @@ public:
     virtual void init();
 
     /** Flags for the first byte in the memory. */
-    static const uint8_t VDEV_SET =     0x01;
-    static const uint8_t VDEV_WORK =    0x02;
-    static const uint8_t VDEV_FINISH =  0x04;
+    static const uint8_t VDEV_SET = 0x01;
+    static const uint8_t VDEV_WORK = 0x02;
+    static const uint8_t VDEV_FINISH = 0x04;
     static const uint8_t VDEV_CORRECT = 0x08;
 
     /** Method to trigger an interrupt after task finishes. */
     void triggerInterrupt();
     /** Simple method to access data. */
     Tick access(PacketPtr pkt);
+    /** Record the execution state and energy consumption. **/
+    void AtomicSimpleCPU::tick();
     /** Handle energy state changes. */
     virtual int handleMsg(const EnergyMsg &msg);
     /** Method for python scripts to get port. */
@@ -72,6 +74,13 @@ public:
     void recvFunctional(PacketPtr pkt);
     bool recvTimingReq(PacketPtr pkt);
     void recvRespRetry();
+
+    /** State related parameters **/
+    enum State {
+        STATE_POWEROFF = 0,
+        STATE_IDLE = 1,
+        STATE_ACTIVE = 2
+    }
 
 protected:
 
@@ -92,6 +101,10 @@ protected:
     bool is_interruptable;
     /** When power off, time is remained for the task */
     Tick delay_remained;
+    /** Energy consumption in different states : **/
+    double energy_consumed_per_cycle_vdev[3] = {0, 0.25*1000, 1.75*1000};
+    /** Execution states of vdev : [OFF, IDLE, ACTIVE]; **/
+    STATE execution_state = STATE_POWEROFF;
 
     EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_interrupt;
     /** Tell whether the task is successful */

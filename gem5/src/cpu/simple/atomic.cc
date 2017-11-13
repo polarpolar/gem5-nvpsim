@@ -61,8 +61,8 @@
 #include "sim/faults.hh"
 #include "sim/system.hh"
 #include "sim/full_system.hh"
-//#include "engy/state_machine.hh"
-//#include "engy/two_thres.hh"
+#include "engy/state_machine.hh"
+#include "engy/two_thres.hh"
 #include "engy/DVFS.hh"
 
 using namespace std;
@@ -653,7 +653,7 @@ AtomicSimpleCPU::printAddr(Addr a)
     dcachePort.printAddr(a);
 }
 
-/*
+
 // two-threshold handler
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
@@ -678,9 +678,9 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
             rlt = 0;
     }
     return rlt;
-}*/
+}
 
-
+/*
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 {
@@ -721,6 +721,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
     }
     return rlt;
 }
+*/
 
 int
 AtomicSimpleCPU::virtualDeviceDelay(Tick tick)
