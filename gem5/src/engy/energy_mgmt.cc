@@ -17,6 +17,7 @@ EnergyMgmt::EnergyMgmt(const Params *p)
           event_energy_harvest(this, false, Event::Energy_Pri),
           state_machine(p->state_machine),
           harvest_module(p->harvest_module),
+          capacity(p->capacity),
           _path_energy_profile(p->path_energy_profile)
 {
     msg_togo.resize(0);
@@ -52,19 +53,25 @@ int EnergyMgmt::consumeEnergy(double val)
     /* Consume energy if val > 0, and harvest energy if val < 0 */
     // Edit by wtd on 11/13/17.
     // Add the upper/lower bound of capacity: [0, Capacity]
-    double capacity = 100;  // uF
     double lower_bound = 0;
-    double higher_bound = 0.5 * capacity*pow(10, -3) * pow(5,2); // mJ
+    double higher_bound = 0.5 * capacity * pow(10, 3) * pow(5,2); // nJ
+    double cons_unit, harv_unit;
     if (val > 0) {
         energy_remained -= val;
-        if (energy_remained < lower_bound)
+        cons_unit = val;
+        if (energy_remained < lower_bound) {
+            cons_unit -= (lower_bound - energy_remained);
             energy_remained = lower_bound;
-        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is consumed by xxx. Energy remained: %lf\n", val, energy_remained);
+        }
+        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is consumed by xxx. Energy remained: %lf\n", cons_unit, energy_remained);
     } else {
         energy_remained = harvest_module->energy_harvest(-val, energy_remained);
-        if (energy_remained > higher_bound)
+        harv_unit = -val;
+        if (energy_remained > higher_bound) {
+            harv_unit -= (energy_remained - higher_bound);
             energy_remained = higher_bound;
-        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", -val, energy_remained);
+        }
+        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", harv_unit, energy_remained);
     }
 
     state_machine->update(energy_remained);

@@ -11,8 +11,9 @@ system.has_vdev = 1
 system.vdev_ranges = [AddrRange('512MB', '512MB'), AddrRange('513MB', '513MB'), AddrRange('514MB', '514MB')]
 system.vaddr_vdev_ranges = [AddrRange('1000MB', '1000MB'), AddrRange('1001MB', '1001MB'), AddrRange('1002MB', '1002MB')]
 
-system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/energy_prof',energy_time_unit = '10us')
-system.energy_mgmt.state_machine = TwoThresSM(thres_high = 20000, thres_low = 10000)
+system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/energy_prof', energy_time_unit = '10us')
+system.energy_mgmt.state_machine = TwoThresSM(thres_high = 750, thres_low = 600)
+system.energy_mgmt.capacity = 1;	#uF
 
 system.cpu = AtomicSimpleCPU()
 system.cpu.s_energy_port = system.energy_mgmt.m_energy_port

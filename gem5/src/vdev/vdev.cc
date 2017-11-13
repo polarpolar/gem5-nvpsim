@@ -108,7 +108,6 @@ VirtualDevice::access(PacketPtr pkt)
 {
     /* Todo: what if the cpu ask to work on a task when the vdev is busy? **/
     DPRINTF(MemoryAccess, "Virtual Device accessed at %#lx.\n", pkt->getAddr());
-    //DPRINTF(VirtualDevice, "Virtual Device accessed at %#lx.\n", pkt->getAddr());
     Addr offset = pkt->getAddr() - range.start();
     if (pkt->isRead()) {
         memcpy(pkt->getPtr<uint8_t>(), pmem+offset, pkt->getSize());
@@ -152,7 +151,8 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
             if (*pmem & VDEV_WORK) {
                 /* This should be handled if the device is on a task **/
                 assert(event_interrupt.scheduled());
-                DPRINTF(EnergyMgmt, "device power off occurs in the middle of a task at %lu\n", curTick());
+                DPRINTF(VirtualDevice, "device power off occurs in the middle of a task at %lu\n", curTick());
+
                 /* Calculate the remaining delay if the device is interruptable */
                 if (is_interruptable)
                     delay_remained = event_interrupt.when() - curTick();
@@ -162,7 +162,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
         case (int) SimpleEnergySM::POWERON:
             if (*pmem & VDEV_WORK) {
                 assert(!event_interrupt.scheduled());
-                DPRINTF(EnergyMgmt, "device power on to finish a task at %lu\n", curTick());
+                DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
                 schedule(event_interrupt, curTick() + delay_remained);
             }
             break;

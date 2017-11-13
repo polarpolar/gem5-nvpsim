@@ -37,7 +37,6 @@ int main()
 while(count < 1)
 {
 
-
 	// initialization of TMP Sensor
 	periInit(tmp_reg);           // TMP sensor init
 	printf("TMP Inited.\n");

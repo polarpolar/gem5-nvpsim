@@ -11,3 +11,4 @@ class EnergyMgmt(SimObject):
     energy_time_unit = Param.Clock(Parent.energy_time_unit, "time unit for energy profile")
     state_machine = Param.BaseEnergySM(SimpleEnergySM(), "energy state machine")
     harvest_module = Param.BaseHarvest(SimpleHarvest(), "energy harvesting module")
+    capacity = Param.Float(1.0, "capacitor (1uF for default)")

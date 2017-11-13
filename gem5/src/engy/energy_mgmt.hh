@@ -39,6 +39,7 @@ protected:
     EventWrapper<EnergyMgmt, &EnergyMgmt::energyHarvest> event_energy_harvest;
     BaseEnergySM *state_machine;
     BaseHarvest *harvest_module;
+    double capacity;
 
 private:
     std::vector<double> readEnergyProfile();
