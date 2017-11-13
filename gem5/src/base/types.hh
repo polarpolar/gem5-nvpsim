@@ -61,7 +61,7 @@ typedef int64_t Counter;
  */
 typedef uint64_t Tick;
 
-const Tick MaxTick = ULL(0xffffffffffffffff);
+const Tick MaxTick = ULL(0xffffffffffffffff);//ULL(0xffffffffffffffff);
 
 /**
  * Cycles is a wrapper class for representing cycle counts, i.e. a
