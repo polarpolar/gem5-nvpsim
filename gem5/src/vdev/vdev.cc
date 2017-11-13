@@ -85,7 +85,7 @@ VirtualDevice::init()
     DPRINTF(VirtualDevice, "Virtual Device started with range: %#lx - %#lx\n",
             range.start(), range.end());
 
-    state = STATE_POWEROFF;
+    execution_state = STATE_POWEROFF;
 }
 
 void
@@ -132,7 +132,7 @@ VirtualDevice::access(PacketPtr pkt)
                     /* Schedule interrupt. */
                     schedule(event_interrupt, curTick() + delay_set + delay_self);
                     /* Energy consumption. */
-                    consumeEnergy(energy_consumed_per_cycle_vdev[ACTIVE] * ticksToCycles(delay_recover + delay_self))
+                    consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_recover + delay_self));
                     cpu->virtualDeviceSet(delay_set);
                     cpu->virtualDeviceStart(id);
                 }
@@ -147,18 +147,28 @@ VirtualDevice::access(PacketPtr pkt)
     return 0;
 }
 
-void AtomicSimpleCPU::tick()
+void 
+VirtualDevice::tick()
 {
-    switch(execution_state)
-    {
-        case STATE_POWEROFF:    DPRINTF(VirtualDevice, "Tick: state is POWER OFF.\n"); break;
-        case STATE_IDLE:             DPRINTF(VirtualDevice, "Tick: state is IDLE(SLEEP).\n"); break;
-        case STATE_ACTIVE:         DPRINTF(VirtualDevice, "Tick: state is ACTIVE.\n"); break;
-        default:    DPRINTF(VirtualDevice, "Tick: undefined state!\n", ); break;
-    }
     
+    /*switch(execution_state)
+    {
+        case STATE_POWEROFF:    
+            DPRINTF(VirtualDevice, "Tick: state is POWER OFF.\n"); 
+            break;
+        case STATE_IDLE:             
+            DPRINTF(VirtualDevice, "Tick: state is IDLE(SLEEP).\n", execution_state); 
+            break;
+        case STATE_ACTIVE:         
+            DPRINTF(VirtualDevice, "Tick: state is ACTIVE.\n", execution_state); 
+            break;
+        default:    DPRINTF(VirtualDevice, "Tick: undefined state!\n", ); break;
+    }*/
+    //DPRINTF(VirtualDevice, "Tick\n");
     /** Energy consumption **/
     consumeEnergy(energy_consumed_per_cycle_vdev[execution_state] * ticksToCycles(1));
+
+    //schedule(tickEvent, curTick() + 1);
 }
 
 int
@@ -190,7 +200,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
                 DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
                 schedule(event_interrupt, curTick() + delay_remained);
                 /** Energy consumption **/
-                consumeEnergy(energy_consumed_per_cycle_vdev[ACTIVE] * ticksToCycles(delay_remained));
+                consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
             }
             break;
         default:

@@ -60,7 +60,7 @@ public:
     /** Simple method to access data. */
     Tick access(PacketPtr pkt);
     /** Record the execution state and energy consumption. **/
-    void AtomicSimpleCPU::tick();
+    void tick();
     /** Handle energy state changes. */
     virtual int handleMsg(const EnergyMsg &msg);
     /** Method for python scripts to get port. */
@@ -80,7 +80,7 @@ public:
         STATE_POWEROFF = 0,
         STATE_IDLE = 1,
         STATE_ACTIVE = 2
-    }
+    };
 
 protected:
 
@@ -104,7 +104,7 @@ protected:
     /** Energy consumption in different states : **/
     double energy_consumed_per_cycle_vdev[3] = {0, 0.25*1000, 1.75*1000};
     /** Execution states of vdev : [OFF, IDLE, ACTIVE]; **/
-    STATE execution_state = STATE_POWEROFF;
+    State execution_state = STATE_POWEROFF;
 
     EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_interrupt;
     /** Tell whether the task is successful */
