@@ -14,4 +14,4 @@ class VirtualDevice(MemObject):
     is_interruptable = Param.Bool(0, "whether the device is interruptable")
     cpu = Param.BaseCPU(NULL, "The cpu of the system")
     range = Param.AddrRange('1MB', "Address range")
-    energy_consumed_per_cycle_vdev = Param.Float(0, "The power-off, idle and active energy consumption, where the first one (power-off consumption) must be zero.")
+    energy_consumed_per_cycle_vdev = VectorParam.Float([], "The power-off, idle and active energy consumption, where the first one (power-off consumption) must be zero.")
