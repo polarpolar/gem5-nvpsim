@@ -5,6 +5,8 @@
 #ifndef GEM5_VDEV_HH
 #define GEM5_VDEV_HH
 
+#include <fstream>
+
 #include <string>
 #include <vector>
 #include "mem/mem_object.hh"
@@ -82,6 +84,8 @@ public:
         STATE_ACTIVE = 2
     };
 
+		bool need_log;
+		int access_time = 0;
 protected:
 
     BaseCPU *cpu;

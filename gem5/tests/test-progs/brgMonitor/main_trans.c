@@ -34,7 +34,8 @@ int main()
 
 	printf("Peripherals Registered.\n");
 
-while(count < 1)
+//while(count < 1)
+while(count < 50)
 {
 
 	// initialization of TMP Sensor

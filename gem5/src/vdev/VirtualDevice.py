@@ -15,3 +15,4 @@ class VirtualDevice(MemObject):
     cpu = Param.BaseCPU(NULL, "The cpu of the system")
     range = Param.AddrRange('1MB', "Address range")
     energy_consumed_per_cycle_vdev = VectorParam.Float([], "The power-off, idle and active energy consumption, where the first one (power-off consumption) must be zero.")
+    need_log = Param.Bool(0, "whether this device needs log how many times it is triggered to \"m5out/devicedata\"")

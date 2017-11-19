@@ -8,9 +8,17 @@
 #include "engy/harvest.hh"
 #include "debug/EnergyMgmt.hh"
 #include "sim/eventq.hh"
+#include "engy/DFS_LRY.hh"
+
+//这个全局变量用于通知energy_mgmt现在系统的状态
+//不知道为啥energy_mgmt收不到msg，所以只能将就这么搞了
+//这个变量的本体是在DFS_LRY.cc中定义的
+extern bool DFS_LRY_poweron_dirty_patch;
 
 EnergyMgmt::EnergyMgmt(const Params *p)
         : SimObject(p),
+        	energy_consumed_per_harvest(p->energy_consumed_per_harvest),
+        	energy_profile_mult(p->energy_profile_mult),
           time_unit(p->energy_time_unit),
           energy_remained(0),
           event_msg(this, false, Event::Energy_Pri),
@@ -65,11 +73,22 @@ int EnergyMgmt::consumeEnergy(double val)
         }
         DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is consumed by xxx. Energy remained: %lf\n", cons_unit, energy_remained);
     } else {
+    		val *= energy_profile_mult;
+    		
         energy_remained = harvest_module->energy_harvest(-val, energy_remained);
         harv_unit = -val;
+        if(DFS_LRY_poweron_dirty_patch)
+        {
+		        //energy leakage!
+		        DPRINTF(EnergyMgmt, "Leakage: %lf\n", energy_consumed_per_harvest);
+		        energy_remained -= energy_consumed_per_harvest;
+      	}
         if (energy_remained > higher_bound) {
             harv_unit -= (energy_remained - higher_bound);
             energy_remained = higher_bound;
+        }
+        if (energy_remained < lower_bound) {
+            energy_remained = lower_bound;
         }
         DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", harv_unit, energy_remained);
     }
@@ -101,9 +120,10 @@ int EnergyMgmt::broadcastMsgAsEvent(const EnergyMsg &msg)
 
 int EnergyMgmt::handleMsg(const EnergyMsg &msg)
 {
+		DPRINTF(EnergyMgmt, "[EnergyMgmt] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
     /* msg type should be 0 here, for 0 represents energy consuming, */
     /* and EnergyMgmt module can only handle energy consuming msg*/
-    if (msg.type)
+    if (msg.type != DFS_LRY::MsgType::CONSUMEENERGY)
         return 0;
 
     return consumeEnergy(msg.val);

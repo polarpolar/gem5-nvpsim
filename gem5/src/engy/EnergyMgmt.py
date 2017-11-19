@@ -12,3 +12,5 @@ class EnergyMgmt(SimObject):
     state_machine = Param.BaseEnergySM(SimpleEnergySM(), "energy state machine")
     harvest_module = Param.BaseHarvest(SimpleHarvest(), "energy harvesting module")
     capacity = Param.Float(1.0, "capacitor (1uF for default)")
+    energy_consumed_per_harvest = Param.Float(0.01, "energy consumed per harvest (because of leakage)")
+    energy_profile_mult = Param.Float(1, "energy harvest multiplier")
