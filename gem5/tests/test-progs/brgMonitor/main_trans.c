@@ -10,16 +10,17 @@
 #include "encode.h"
 
 #define ANum 10	// acceleration collection number in one packet 
+#define PeriNum 3
 
 int main()
 {
-	int acc_x, acc_y, acc_z, tmp, payload_size, i, count = 0;
+	int acc_x, acc_y, acc_z, tmp, payload_size, i, j, count = 0;
 	uint8_t collection[1+2+6*ANum];
 	uint8_t * payload;
 	uint8_t * tmp_reg, * acc_reg, * rf_reg;
 	uint8_t ImagIn[16]={0};
-	uint8_t ImagOut[16];
-	uint8_t RealOut[16];
+	uint8_t ImagOut[16] = {0};
+	uint8_t RealOut[16] = {0};
 
 	printf("Program Start.\n");
 
@@ -35,36 +36,39 @@ int main()
 	printf("Peripherals Registered.\n");
 
 //while(count < 1)
-while(count < 50)
+while(count < 1)
 {
-
-	// initialization of TMP Sensor
-	periInit(tmp_reg);           // TMP sensor init
-	printf("TMP Inited.\n");
-
-	// data read from TMP Sensor
-	tmpSense(&tmp, tmp_reg);
-	collection[0]=(unsigned char)((tmp&0xFF00)>>8);
-	collection[1]=(unsigned char)(tmp&0x00FF);
-	printf("--Collecting the temperature data (%d).\n", tmp);
-
-	// initialization of ACC Sensor
-	periInit(acc_reg); 	
-	printf("ACC Inited.\n");
-
-	// data read from ACC Sensor
-	for(i=1; i<=ANum; i++)
+	printf("Start Execution.\n"); 
+	for (j=0; j<PeriNum/2; j++)
 	{
-		accSense(&acc_x, &acc_y, &acc_z, acc_reg);
-		collection[6*i-4]=(unsigned char)((acc_x&0xFF00)>>8);
-		collection[6*i-3]=(unsigned char)(acc_x&0x00FF);
-		collection[6*i-2]=(unsigned char)((acc_y&0xFF00)>>8);
-		collection[6*i-1]=(unsigned char)(acc_y&0x00FF);
-		collection[6*i]=(unsigned char)((acc_z&0xFF00)>>8);
-		collection[6*i+1]=(unsigned char)(acc_z&0x00FF);
-		printf("--Collecting the %d-th acceleration data.\n", i);
-	}
+		// initialization of TMP Sensor
+		periInit(tmp_reg);           // TMP sensor init
+		printf("TMP Inited.\n"); 
+
 	
+		// data read from TMP Sensor
+		tmpSense(&tmp, tmp_reg);
+		collection[0]=(unsigned char)((tmp&0xFF00)>>8);
+		collection[1]=(unsigned char)(tmp&0x00FF);
+		printf("--Collecting the temperature data (%d).\n", tmp);
+	
+		// initialization of ACC Sensor
+		periInit(acc_reg); 	
+		printf("ACC Inited.\n");
+
+		// data read from ACC Sensor
+		for(i=1; i<=ANum; i++)
+		{
+			accSense(&acc_x, &acc_y, &acc_z, acc_reg);
+			collection[6*i-4]=(unsigned char)((acc_x&0xFF00)>>8);
+			collection[6*i-3]=(unsigned char)(acc_x&0x00FF);
+			collection[6*i-2]=(unsigned char)((acc_y&0xFF00)>>8);
+			collection[6*i-1]=(unsigned char)(acc_y&0x00FF);
+			collection[6*i]=(unsigned char)((acc_z&0xFF00)>>8);
+			collection[6*i+1]=(unsigned char)(acc_z&0x00FF);
+			printf("--Collecting the %d-th acceleration data.\n", i);
+		}
+	}
 	// Data processing: FFT
 	fft(32, 0, collection, ImagIn, RealOut, payload);
 	printf("FFT completed.\n");
@@ -73,14 +77,14 @@ while(count < 50)
 	getEncodedPacket(payload, &payload_size);
 	printf("The size of this package is %d Bytes.\n", payload_size);
 
+	
 	// transmit data from Zigbee
 	periInit(rf_reg);		// Zigbee init
 	rfTrans(rf_reg, payload);	// Zigbee transmit
 	
 	printf("RF transmission completed.\n");
+	
 	printf("Complete the %d-th packet.\n", ++count);
-
-	//DPRINTF(EXECUTION, "Complete the %d-th packet.\n", ++count);
 
 }
 	// peripheral logout

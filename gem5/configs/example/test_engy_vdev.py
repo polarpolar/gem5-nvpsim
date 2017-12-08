@@ -1,16 +1,12 @@
 import m5
 from m5.objects import *
 
-import os
-if os.path.exists("m5out/devicedata"):
-	os.remove("m5out/devicedata")
-
 import sys  
-cap = float(sys.argv[1])*30
-profilemult = float(sys.argv[2])/10
+cap = float(sys.argv[1])
+profilemult = float(sys.argv[2])
 
-#ticks_per_sec = 1000000000000
-#max_sec = 100
+#cap = 10   # uF
+#engy_supply_para = 10
 
 system = System()
 system.clk_domain = SrcClockDomain()
@@ -32,8 +28,8 @@ system.energy_mgmt.state_machine.thres_5_to_4 = 1000000000000
 system.energy_mgmt.state_machine.thres_4_to_3 = 1000000000000
 system.energy_mgmt.state_machine.thres_3_to_2 = 1000000000000
 system.energy_mgmt.state_machine.thres_2_to_1 = 1000000000000
-system.energy_mgmt.state_machine.thres_1_to_retention = 0.5 * cap * 1000
-system.energy_mgmt.state_machine.thres_retention_to_off = 0.5 * cap * 1000 * 2
+system.energy_mgmt.state_machine.thres_1_to_retention = 0.5 * 10 * 1000
+system.energy_mgmt.state_machine.thres_retention_to_off = 0.5 * 10 * 1000 * 2
 
 system.energy_mgmt.state_machine.thres_off_to_1 = 0.5 * cap * 1000 * 4.5 *4.5
 system.energy_mgmt.state_machine.thres_retention_to_1 = 0.5 * cap * 1000 * 4.5 *4.5
@@ -42,9 +38,10 @@ system.energy_mgmt.state_machine.thres_2_to_3 = 1000000000000
 system.energy_mgmt.state_machine.thres_3_to_4 = 1000000000000
 system.energy_mgmt.state_machine.thres_4_to_5 = 1000000000000
 
+
 system.energy_mgmt.capacity = cap;	#uF
 system.energy_mgmt.energy_consumed_per_harvest = 0.02; 
-system.energy_mgmt.energy_profile_mult = profilemult; 
+system.energy_mgmt.energy_profile_mult = engy_supply_para; 
 ###
 
 #set some parameters for the CPU
@@ -53,10 +50,10 @@ system.cpu = AtomicSimpleCPU(energy_consumed_per_cycle_5 = 1000000000000,
                              energy_consumed_per_cycle_3 = 1000000000000,
                              energy_consumed_per_cycle_2 = 2,
                              energy_consumed_per_cycle_1 = 1,
-	  
+      
                              energy_consumed_poweron = 50,  
                              clockPeriod_to_poweron = 10,
-	  
+      
                              clock_mult_5 = 1/1000000000000,
                              clock_mult_4 = 1/1000000000000,
                              clock_mult_3 = 1/1000000000000,
@@ -124,21 +121,13 @@ system.cpu.createThreads()
 root = Root(full_system = False, system = system)
 m5.instantiate()
 
-print "Beginning simulation! cap: %f" % cap
-#exit_event = m5.simulate(int(max_sec * ticks_per_sec))
-exit_event = m5.simulate()
+print "Beginning simulation!"
+exit_event = m5.simulate(int(0.2 * 1000000000000))
 print 'Exiting @ tick %i because %s' % (m5.curTick(), exit_event.getCause())
 
-if os.path.exists("m5out/devicedata"):
-	fi = open("m5out/devicedata","r")
-	line = fi.readline()
-	vdev_access = int(line)
-	fi.close()
-else:
-	vdev_access = 0
 
-fo = open("m5out/batch_res.csv","a")
-fo.write("%f,%f,%i,%i,%s\n" % (cap, profilemult, vdev_access, m5.curTick(), exit_event.getCause()))
-fo.close()
-
-print "%f,%f,%i,%i" % (cap, profilemult, vdev_access, m5.curTick())
+#fi = open("m5out/devicedata","r")
+#line = fi.readline()
+#vdev_access = int(line)
+#print "vdev3 access: %i" % vdev_access
+#fi.close()

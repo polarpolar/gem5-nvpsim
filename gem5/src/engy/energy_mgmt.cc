@@ -26,7 +26,9 @@ EnergyMgmt::EnergyMgmt(const Params *p)
           state_machine(p->state_machine),
           harvest_module(p->harvest_module),
           capacity(p->capacity),
-          _path_energy_profile(p->path_energy_profile)
+          _path_energy_profile(p->path_energy_profile)//,
+          //cap_volt_lower_bound(0),
+          //cap_volt_upper_bound(5)
 {
     msg_togo.resize(0);
 }
@@ -59,12 +61,15 @@ int EnergyMgmt::consumeEnergy(double val)
 {
     /* Todo: Pass the module which consumed the energy to this function. (Or DPRINTF in the module which consumes energy) */
     /* Consume energy if val > 0, and harvest energy if val < 0 */
-    // Edit by wtd on 11/13/17.
-    // Add the upper/lower bound of capacity: [0, Capacity]
-    double lower_bound = 0;
-    double higher_bound = 0.5 * capacity * pow(10, 3) * pow(5,2); // nJ
+    // Edit by wtd on 11/13/17: Add the upper/lower bound of capacity: capacity, [cap_volt_lower_bound, cap_volt_lower_bound]
     double cons_unit, harv_unit;
+    double cap_volt_lower_bound = 0.8;
+    double cap_volt_upper_bound = 5;
+    double lower_bound = 0.5 * capacity * pow(cap_volt_lower_bound, 2) * pow(10, 3); // nJ
+    double upper_bound = 0.5 * capacity * pow(cap_volt_upper_bound, 2) * pow(10, 3); // nJ
+
     if (val > 0) {
+        // consumption
         energy_remained -= val;
         cons_unit = val;
         if (energy_remained < lower_bound) {
@@ -72,6 +77,8 @@ int EnergyMgmt::consumeEnergy(double val)
             energy_remained = lower_bound;
         }
         DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is consumed by xxx. Energy remained: %lf\n", cons_unit, energy_remained);
+        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Lower Bound!");
+        DPRINTF(VirtualDevice, "[EngyMgmt] Energy Storage Meets Lower Bound!");
     } else {
     		val *= energy_profile_mult;
     		
@@ -83,14 +90,16 @@ int EnergyMgmt::consumeEnergy(double val)
 		        DPRINTF(EnergyMgmt, "Leakage: %lf\n", energy_consumed_per_harvest);
 		        energy_remained -= energy_consumed_per_harvest;
       	}
-        if (energy_remained > higher_bound) {
-            harv_unit -= (energy_remained - higher_bound);
-            energy_remained = higher_bound;
+        if (energy_remained > upper_bound) {
+            harv_unit -= (energy_remained - upper_bound);
+            energy_remained = upper_bound;
         }
         if (energy_remained < lower_bound) {
             energy_remained = lower_bound;
         }
         DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", harv_unit, energy_remained);
+        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Upper Bound!");
+        DPRINTF(VirtualDevice, "[EngyMgmt] Energy Storage Meets Upper Bound!");
     }
 
     state_machine->update(energy_remained);
@@ -120,7 +129,7 @@ int EnergyMgmt::broadcastMsgAsEvent(const EnergyMsg &msg)
 
 int EnergyMgmt::handleMsg(const EnergyMsg &msg)
 {
-		DPRINTF(EnergyMgmt, "[EnergyMgmt] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+	DPRINTF(EnergyMgmt, "[EnergyMgmt] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
     /* msg type should be 0 here, for 0 represents energy consuming, */
     /* and EnergyMgmt module can only handle energy consuming msg*/
     if (msg.type != DFS_LRY::MsgType::CONSUMEENERGY)

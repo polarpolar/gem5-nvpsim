@@ -875,6 +875,7 @@ int
 AtomicSimpleCPU::virtualDeviceInterrupt(Tick tick)
 {
     in_interrupt = 1;
+    DPRINTF(VirtualDevice, "AtomicCPU virtualDeviceInterrupt vdev_int_latency = %#lu\n", tick);
     return virtualDeviceDelay(tick);
 }
 

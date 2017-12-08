@@ -14,10 +14,10 @@
 #define ACC_SENSOR_ID	1
 #define RF_ID			2
 
-#define VDEV_INIT		0x01
-#define VDEV_EXEC		0x01
+#define VDEV_INIT		0x80
+#define VDEV_EXEC		0x40
 #define VDEV_READY	0x04
-#define VDEV_FINISH 	0x04
+#define VDEV_FINISH 	0x01
 
 static int VDEV_REG_NUM[8] = {
 	3,	// TMP_SENSOR
