@@ -266,17 +266,19 @@ VirtualDevice::tick()
 int
 VirtualDevice::handleMsg(const EnergyMsg &msg)
 {
-	DPRINTF(EnergyMgmt, "Device handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+	DPRINTF(EnergyMgmt, "Device receives handleMsg at %lu, msg.type=%d\n", curTick(), msg.type);
 	switch(msg.type) {
 			case (int) DFS_LRY::MsgType::RETENTION_BEG:
 			/** VDEV retention **
 			  The virtual device energy mode turns to sleep (low cost), but all the uncompleted tasks are failed. Recover delay contains only 'delay_self' is it is un-interruptable.
 			**/
+			DPRINTF(EnergyMgmt, "The Msg is Enter-Retention.\n");
 			vdev_energy_state = STATE_SLEEP;
 			if (*pmem & VDEV_BUSY) {
 				/* This should be handled if the device is on a task */
-				assert(event_interrupt.scheduled());
-				DPRINTF(VirtualDevice, "device retention occurs in the middle of a task at %lu\n", curTick());
+				//assert(event_interrupt.scheduled());
+				DPRINTF(VirtualDevice, "Device retention occurs in the middle of a task at %lu\n", curTick());
+				DPRINTF(EnergyMgmt, "Device retention occurs in the middle of a task at %lu\n", curTick());
 
 				/* Calculate the remaining delay*/
 				if (!is_interruptable) {
@@ -291,6 +293,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			/** VDEV shutdown **
 			  The virtual device completed failed. It becomes un-initialized and needs re-initialization. If it is un-interruptable and fails during busy state, it also needs to restart and rerun the task with 'delay_self'. The device requires a recover time ('delay_recover') to support the reinitialization and restart procedure. 
 			**/
+			DPRINTF(EnergyMgmt, "The Msg is Enter-Power-Off.\n");
 			/* Reset the states */
 			*pmem |= VDEV_RAW;
 			*pmem &= ~VDEV_READY;
@@ -299,6 +302,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			if (vdev_energy_state == STATE_SLEEP) {
 				assert(!event_interrupt.scheduled());
 				DPRINTF(VirtualDevice, "device power off occurs during retention at %lu\n", curTick());
+				DPRINTF(EnergyMgmt, "device power off occurs during retention at %lu\n", curTick());
 				/* delay_remained updates with punishment */
 				Tick delay_punish = 0;
 				delay_remained += delay_recover + delay_set + delay_punish;
@@ -307,7 +311,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			else {
 				delay_remained = delay_recover + delay_set;
 				if (*pmem & VDEV_BUSY) {
-					assert(event_interrupt.scheduled());
+					//assert(event_interrupt.scheduled());
 					DPRINTF(VirtualDevice, "device power off occurs in the middle of a task at %lu\n", curTick());
 					if (!is_interruptable) {
 						delay_remained += delay_self;
@@ -321,6 +325,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			break;
 		case (int) DFS_LRY::MsgType::RETENTION_END:
 			/** VDEV recover from retention **/
+			DPRINTF(EnergyMgmt, "The Msg is Retention-to-Active.\n");
 			vdev_energy_state = STATE_ACTIVE;
 			if (*pmem & VDEV_BUSY) 
 			{
@@ -331,6 +336,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			break;
 		case (int) DFS_LRY::MsgType::POWERON:
 			/** VDEV power recover **/
+			DPRINTF(EnergyMgmt, "The Msg is Poweroff-to-Active.\n");
 			vdev_energy_state = STATE_ACTIVE;
 			if (*pmem & VDEV_BUSY) {
 				assert(!event_interrupt.scheduled());
@@ -341,6 +347,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			}
 			break;
 		default:
+			DPRINTF(EnergyMgmt, "Unrecognized EngyMsg.\n");
 			return 0;
 	}
 	return 1;

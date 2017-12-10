@@ -1,0 +1,38 @@
+13:10 	Why the peripheral not failure
+13:10 	remove energy consume and harvest logs. 
+13:10 	remove leakage logs, msg calling when type == 0.
+14:06 	add the log of power failure.
+14:15 	Still cannot fail. The capacitor never meet the lower bound. It is strange. I change the logs and show the upper and lower bound. I hope to see the energy changes.
+14:31 	现在的问题是，系统在能量达到Upper bound之后没有出发EngyMsg, 不知道为什么。
+14:39 	Maybe the reason is leakage, show the leakages.
+15:10 	Add the Energy Remained before calling the state machine.
+15:14 	问题1：之前的log输出的energy remain信息是错误的。（解决）
+15:18 	问题2：能量消耗的太慢了。下一步，找到外设的消耗。（解决）
+15:18 	看不到外设消耗能量的信息。
+15:29 	问题3：依然是电容太大、太阳能太强了。（解决）
+	问题4: 外设recover的时候似乎没有消耗能量。（解决）
+15:36	能量消耗加了10倍，电容减半。
+	问题5：不知道电容是怎么配置的，为什么是*50？？（解决）
+	增加了电容的输出log
+16:01	问题5解决：电容和能量系数写反了。
+	问题4解决：改错地方了。
+	外设的能量增加了十倍，写在了vdev.cc里面。
+16:12	出了新的错误，是vdev中又一个assert出错了，但是无法确认错误在哪里。
+	1. 尝试恢复外设的消耗。
+16:19	恢复了外设的消耗之后，不知道为什么就好了。到底是哪一个状态出错了呢？
+16:23	这回在外面写好了能耗加十倍。
+16:27	好像能耗还是有点问题，再改一改试试。
+16:33	调用错了python文件：我应该用test_engy_vdev.py的。
+16:47	状态机的状态不稳定！这是因为输入的状态有错误。
+16:53	再一次报错，还是assert的问题。
+	没有找到逻辑错，删掉了两个assert看看有什么问题。
+17:06	还是不对，很疲倦，现在改不下去了。
+
+
+
+
+
+
+
+
+

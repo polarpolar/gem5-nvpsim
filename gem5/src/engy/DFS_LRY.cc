@@ -140,7 +140,7 @@ void DFS_LRY::update(double _energy)
         broadcastMsg(msg);
     }
 
-//pwoer off
+//power off
     else if (state == STATE_RETENTION && _energy < thres_retention_to_off)
     {
     		DFS_LRY_poweron_dirty_patch = false;

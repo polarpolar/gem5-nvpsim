@@ -2,8 +2,8 @@ import m5
 from m5.objects import *
 
 import sys  
-cap = float(sys.argv[1])
-profilemult = float(sys.argv[2])
+profilemult = float(sys.argv[1])
+cap = float(sys.argv[2])
 
 #cap = 10   # uF
 #engy_supply_para = 10
@@ -28,8 +28,8 @@ system.energy_mgmt.state_machine.thres_5_to_4 = 1000000000000
 system.energy_mgmt.state_machine.thres_4_to_3 = 1000000000000
 system.energy_mgmt.state_machine.thres_3_to_2 = 1000000000000
 system.energy_mgmt.state_machine.thres_2_to_1 = 1000000000000
-system.energy_mgmt.state_machine.thres_1_to_retention = 0.5 * 10 * 1000
-system.energy_mgmt.state_machine.thres_retention_to_off = 0.5 * 10 * 1000 * 2
+system.energy_mgmt.state_machine.thres_1_to_retention = 0.5 * cap * 1000 * 2 * 2
+system.energy_mgmt.state_machine.thres_retention_to_off = 0.5 * cap * 1000 * 1.1 * 1.1
 
 system.energy_mgmt.state_machine.thres_off_to_1 = 0.5 * cap * 1000 * 4.5 *4.5
 system.energy_mgmt.state_machine.thres_retention_to_1 = 0.5 * cap * 1000 * 4.5 *4.5
@@ -41,15 +41,15 @@ system.energy_mgmt.state_machine.thres_4_to_5 = 1000000000000
 
 system.energy_mgmt.capacity = cap;	#uF
 system.energy_mgmt.energy_consumed_per_harvest = 0.02; 
-system.energy_mgmt.energy_profile_mult = engy_supply_para; 
+system.energy_mgmt.energy_profile_mult = profilemult; 
 ###
 
 #set some parameters for the CPU
 system.cpu = AtomicSimpleCPU(energy_consumed_per_cycle_5 = 1000000000000,
                              energy_consumed_per_cycle_4 = 1000000000000,
                              energy_consumed_per_cycle_3 = 1000000000000,
-                             energy_consumed_per_cycle_2 = 2,
-                             energy_consumed_per_cycle_1 = 1,
+                             energy_consumed_per_cycle_2 = 20,
+                             energy_consumed_per_cycle_1 = 10,
       
                              energy_consumed_poweron = 50,  
                              clockPeriod_to_poweron = 10,
@@ -78,7 +78,7 @@ system.system_port = system.membus.slave
 system.vdev1 = VirtualDevice()
 system.vdev1.cpu = system.cpu
 system.vdev1.range = system.vdev_ranges[0]
-system.vdev1.energy_consumed_per_cycle_vdev = [Float(0), Float(0.003), Float(1.35)] # The energy consumption of each cycle at power-off, idle and active mode.
+system.vdev1.energy_consumed_per_cycle_vdev = [Float(0), Float(0.03), Float(13.5)] # The energy consumption of each cycle at power-off, idle and active mode.
 system.vdev1.delay_self = '10ms'
 system.vdev1.delay_cpu_interrupt = '100us'
 system.vdev1.delay_set = '2200us'
@@ -90,7 +90,7 @@ system.vdev1.s_energy_port = system.energy_mgmt.m_energy_port
 system.vdev2 = VirtualDevice()
 system.vdev2.cpu = system.cpu
 system.vdev2.range = system.vdev_ranges[1]
-system.vdev2.energy_consumed_per_cycle_vdev = [Float(0.0234), Float(0.26), Float(0.416)] # The energy consumption of each cycle at power-off, idle and active mode.
+system.vdev2.energy_consumed_per_cycle_vdev = [Float(0.234), Float(2.6), Float(41.6)] # The energy consumption of each cycle at power-off, idle and active mode.
 system.vdev2.delay_self = '10ms'
 system.vdev2.delay_cpu_interrupt = '100us'
 system.vdev2.delay_set = '1281us'
@@ -102,7 +102,7 @@ system.vdev2.s_energy_port = system.energy_mgmt.m_energy_port
 system.vdev3 = VirtualDevice()
 system.vdev3.cpu = system.cpu
 system.vdev3.range = system.vdev_ranges[2]
-system.vdev3.energy_consumed_per_cycle_vdev = [Float(0), Float(11.9), Float(11.9)] # The energy consumption of each cycle at power-off, idle and active mode.
+system.vdev3.energy_consumed_per_cycle_vdev = [Float(0), Float(119), Float(119)] # The energy consumption of each cycle at power-off, idle and active mode.
 system.vdev3.delay_self = '100us'
 system.vdev3.delay_cpu_interrupt = '100us'
 system.vdev3.delay_set = '660us'
