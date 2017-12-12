@@ -63,16 +63,16 @@ int EnergyMgmt::consumeEnergy(double val)
     /* Consume energy if val > 0, and harvest energy if val < 0 */
     // Edit by wtd on 11/13/17: Add the upper/lower bound of capacity: capacity, [cap_volt_lower_bound, cap_volt_lower_bound]
     double cons_unit, harv_unit;
-    double cap_volt_lower_bound = 0;
+    //double cap_volt_lower_bound = 0;
     double cap_volt_upper_bound = 5;
-    double lower_bound = 0.5 * capacity * pow(cap_volt_lower_bound, 2) * pow(10, 3); // nJ
+    double lower_bound = state_machine->energy_consume_lower_bound; // nJ
     double upper_bound = 0.5 * capacity * pow(cap_volt_upper_bound, 2) * pow(10, 3); // nJ
 
     // Energy Consumption, if val > 0
     if (val > 0) {
         energy_remained -= val;
         cons_unit = val;
-        // The energy remained has a lower bound. When the lower bound is meet, the system need to power off. Energy > 0.
+        // The energy remained has a lower bound. When the lower bound is meet, the system need to power off. Energy > 0 / retention threshold.
         if (energy_remained < lower_bound) {
             cons_unit -= (lower_bound - energy_remained);
             energy_remained = lower_bound;

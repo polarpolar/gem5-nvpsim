@@ -1,3 +1,4 @@
+2017/12/10
 13:10 	Why the peripheral not failure
 13:10 	remove energy consume and harvest logs. 
 13:10 	remove leakage logs, msg calling when type == 0.
@@ -27,6 +28,24 @@
 16:53	再一次报错，还是assert的问题。
 	没有找到逻辑错，删掉了两个assert看看有什么问题。
 17:06	还是不对，很疲倦，现在改不下去了。
+
+2017/12/11
+08:30	处理昨天的assertion问题。主要问题是不知道定位在那里，也没有办法debug。所以，这次通过增加了一个debug信息的方式把哪里出错了check一下，确认是不是真的"interrupt.schedule()"报错了。
+08:48	找到错误：因为状态连续跳转，导致系统连续两次deschedule了任务。应该是busy状态没有及时清除。
+09:10 	busy状态不应该清楚。这是因为busy状态作为一个标签是用来恢复外设的。因此，我们需要设计状态，不能直接从active到poweroff，而是active到retention，然后再通过leakage到poweroff。为此在state_machine中增加了等于retention_threshold的lowerbound变量，并替换了energyMgmt中的lower_bound。
+09:30	出了低级错误，重新编译。
+09:36	还是不对，应该把变量加在BaseEnergySM里面，再试一次。
+09:39	这次应该是对了。
+09:42	lower_bound需要比retention_threshold略小，判定条件也应该带等于号才能保证完备性。
+09:53	1. 上电之后缺少能量判定？
+	2. 需要显示外设状态。
+10:04	问题一解决。目前需要调整参数。
+
+14:21	问题2: vdev recover cycle < self cycle. (解决)
+14:35	问题3: vdev运行成功以后，在interrupt还没有结束之前，processor把能量耗尽了。目前一口气抽干的模式是不好用的。
+	问题4: init函数和activate函数一个是串行的，一个是并行的，目前没有区分开。init不应该触发中断的。
+14:39	目前的处理器能耗太大了。
+
 
 
 

@@ -55,9 +55,11 @@ protected:
     double thres_retention_to_off;
     double thres_off_to_1;
     double thres_retention_to_1;
-		double thres_1_to_2;
-		double thres_2_to_3;
-		double thres_3_to_4;
-		double thres_4_to_5;
+    double thres_1_to_2;
+    double thres_2_to_3;
+    double thres_3_to_4;
+    double thres_4_to_5;
+    /* Energy consumption is not allowed below this bound. If exists, lower_bound = retention_threshold. the energy will not drop below this bound at once. The system has to first drop to the threshold to enter retention. Otherwise, the lower_bound = 0.
+    */
 };
 #endif //GEM5_TWO_THRES_HH

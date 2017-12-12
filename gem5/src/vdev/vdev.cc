@@ -215,53 +215,11 @@ VirtualDevice::access(PacketPtr pkt)
 	return 0;
 }
 
-
-//By LiuRuoyang：这个tick()函数是干什么的？似乎它会按时间每tick扣掉一点能量。
-//我想我们可以安全的把那行consumeEnergy给注释掉吧。
-
 void 
 VirtualDevice::tick()
 {
 	// Set the behavior in time tick grains
 }
-
-//int
-//VirtualDevice::handleMsg(const EnergyMsg &msg)
-//{
-//	DPRINTF(EnergyMgmt, "Device handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
-//	switch(msg.type) {
-//		case (int) SimpleEnergySM::POWEROFF:
-//			/** Vdev shutdown **/
-//			vdev_energy_state = STATE_POWEROFF;
-//			if (*pmem & VDEV_BUSY) {
-//				/* This should be handled if the device is on a task **/
-//				assert(event_interrupt.scheduled());
-//				DPRINTF(VirtualDevice, "device power off occurs in the middle of a task at %lu\n", curTick());
-//
-//				/* Calculate the remaining delay if the device is interruptable */
-//				if (is_interruptable)
-//					delay_remained = event_interrupt.when() - curTick();
-//				else
-//					delay_remained = delay_set + delay_self;
-//				deschedule(event_interrupt);
-//			}
-//			break;
-//		case (int) SimpleEnergySM::POWERON:
-//			/** Vdev shutdown **/
-//			vdev_energy_state = STATE_ACTIVE;
-//			if (*pmem & VDEV_BUSY) {
-//				assert(!event_interrupt.scheduled());
-//				DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
-//				schedule(event_interrupt, curTick() + delay_remained);
-//				/** Energy consumption **/
-//				consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
-//			}
-//			break;
-//		default:
-//			return 0;
-//	}
-//	return 1;
-//}
 
 int
 VirtualDevice::handleMsg(const EnergyMsg &msg)
@@ -276,16 +234,22 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			vdev_energy_state = STATE_SLEEP;
 			if (*pmem & VDEV_BUSY) {
 				/* This should be handled if the device is on a task */
-				//assert(event_interrupt.scheduled());
+				assert(event_interrupt.scheduled());
 				DPRINTF(VirtualDevice, "Device retention occurs in the middle of a task at %lu\n", curTick());
 				DPRINTF(EnergyMgmt, "Device retention occurs in the middle of a task at %lu\n", curTick());
 
 				/* Calculate the remaining delay*/
 				if (!is_interruptable) {
-					delay_remained = delay_self;
+					// the interrupted operation is initialization
+					if (*pmem & VDEV_RAW)
+						delay_remained = delay_set;
+					// the interrupted operation is execution
+					else
+						delay_remained = delay_self;
 				} else {
 					delay_remained = event_interrupt.when() - curTick();
 				}
+
 				deschedule(event_interrupt);
 			}
 			break;
@@ -311,7 +275,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			else {
 				delay_remained = delay_recover + delay_set;
 				if (*pmem & VDEV_BUSY) {
-					//assert(event_interrupt.scheduled());
+					assert(event_interrupt.scheduled());
 					DPRINTF(VirtualDevice, "device power off occurs in the middle of a task at %lu\n", curTick());
 					if (!is_interruptable) {
 						delay_remained += delay_self;
@@ -332,6 +296,14 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 				assert(!event_interrupt.scheduled());
 				DPRINTF(VirtualDevice, "device recover from retention to finish a task at %lu\n", curTick());
 				schedule(event_interrupt, curTick() + delay_remained);
+				/* Energy consumption. */
+				DPRINTF(VirtualDevice, "Need Ticks: %i, Cycles: %i, Energy: %lf .\n", 
+					delay_remained, 
+					ticksToCycles(delay_remained), 
+					energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained)
+				);
+				consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
+				cpu->virtualDeviceStart(id);
 			}
 			break;
 		case (int) DFS_LRY::MsgType::POWERON:
@@ -343,7 +315,13 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 				DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
 				schedule(event_interrupt, curTick() + delay_remained);
 				/** Energy consumption **/
+				DPRINTF(VirtualDevice, "Need Ticks: %i, Cycles: %i, Energy: %lf .\n", 
+					delay_remained, 
+					ticksToCycles(delay_remained), 
+					energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained)
+				);
 				consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
+				cpu->virtualDeviceStart(id);
 			}
 			break;
 		default:

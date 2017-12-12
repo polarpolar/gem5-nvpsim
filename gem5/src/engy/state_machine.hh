@@ -28,6 +28,7 @@ public:
 protected:
     void broadcastMsg(const EnergyMsg &msg);
     EnergyMgmt *mgmt;
+    double energy_consume_lower_bound;
 };
 
 class SimpleEnergySM : public BaseEnergySM

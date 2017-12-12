@@ -8,7 +8,7 @@
 BaseEnergySM::BaseEnergySM(const Params *p)
     : SimObject(p), mgmt(NULL)
 {
-
+    energy_consume_lower_bound = 0;
 }
 
 void BaseEnergySM::broadcastMsg(const EnergyMsg &msg)
@@ -25,6 +25,7 @@ SimpleEnergySM::SimpleEnergySM(const Params *p)
 void SimpleEnergySM::init()
 {
     state = State::STATE_POWERON;
+    energy_consume_lower_bound = 0;
 }
 
 void SimpleEnergySM::update(double _energy)

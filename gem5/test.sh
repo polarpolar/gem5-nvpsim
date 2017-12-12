@@ -1,8 +1,8 @@
 #rm m5out/batch_res.csv
 
 echo "========================================================="
-energy=0.2
-cap=5
+cap=2
+energy=1
 echo "cap: $cap; entergy: $energy"
 build/ARM/gem5.debug --debug-flag=EnergyMgmt,VirtualDevice --debug-file=virtual_device.o configs/example/test_engy_vdev.py $cap $energy -j2
 
