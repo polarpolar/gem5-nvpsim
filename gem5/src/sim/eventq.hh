@@ -158,6 +158,9 @@ class EventBase
     /// (such as writebacks).
     static const Priority CPU_Tick_Pri =                50;
 
+    /// Virtual Devices ticks must come with CPU ticks before interrupts
+    static const Priority VirtualDevice_Tick_Pri =         52;
+
     /// Virtual Interrupt happens before energy event and after cpu tick
     static const Priority Virtual_Interrupt =           55;
 

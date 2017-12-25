@@ -18,9 +18,33 @@
 #include "engy/DFS_LRY.hh"
 
 #include <fstream>
-	
+
+
+/** Definitions of TickEvent in Virtual Device **/
+VirtualDevice::TickEvent::TickEvent(VirtualDevice *vdev_this)
+    : Event(VirtualDevice_Tick_Pri), vdev(vdev_this)
+{
+}
+
+void
+VirtualDevice::TickEvent::process()
+{
+	assert(vdev);
+	vdev->tick();
+}
+
+const char *
+VirtualDevice::TickEvent::description() const
+{
+	assert(vdev);
+	return "VirtualDevice tick";
+}
+
+/** Definitions of Device Port in Virtual Device **/
 VirtualDevice::DevicePort::DevicePort(const std::string &_name, VirtualDevice *_vdev) : SlavePort(_name, _vdev), vdev(_vdev)
-{}
+{
+
+}
 
 Tick
 VirtualDevice::DevicePort::recvAtomic(PacketPtr pkt)
@@ -54,16 +78,15 @@ AddrRangeList
 VirtualDevice::DevicePort::getAddrRanges() const
 {
 	assert(vdev);
-
 	AddrRangeList rangeList;
 	rangeList.push_back(vdev->getAddrRange());
-
 	return rangeList;
 }
 
 VirtualDevice::VirtualDevice(const Params *p) : 
 	MemObject(p),
 	id(0),
+	tickEvent(this),
 	port(name() + ".port", this),
 	need_log(p->need_log),
 	cpu(p->cpu),
@@ -84,6 +107,13 @@ VirtualDevice::VirtualDevice(const Params *p) :
 	energy_consumed_per_cycle_vdev[0] = p->energy_consumed_per_cycle_vdev[0];
 	energy_consumed_per_cycle_vdev[1] = p->energy_consumed_per_cycle_vdev[1];
 	energy_consumed_per_cycle_vdev[2] = p->energy_consumed_per_cycle_vdev[2];
+}
+
+VirtualDevice::~VirtualDevice()
+{
+    if (tickEvent.scheduled()) {
+        deschedule(tickEvent);
+    }
 }
 
 void

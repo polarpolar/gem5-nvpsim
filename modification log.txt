@@ -46,6 +46,29 @@
 	问题4: init函数和activate函数一个是串行的，一个是并行的，目前没有区分开。init不应该触发中断的。
 14:39	目前的处理器能耗太大了。
 
+2017/12/20
+13:35	Why am I coming to work so late??? What did I do last ten days???
+13:37	今天的任务是把能量消耗的单位转化为每个周期实现。
+13:39	我觉得，我们现在需要做的事儿是，找到如何给vdev一个函数，让系统每个tick都调用它。
+
+2017/12/24
+17:30	我们发现，cpu的周期运行是通过tickEvent的tick()函数调用的，这是程序的主要仿真函数。然而，目前tick()是如何被调用的，还不是很清楚。为了在VirtualDevice中，实现类似的功能，我们在VirtualDevice中定义了相同的tickEvent。下面需要完成两件事儿：
+	1. VirtualDevice中的tickEvent是正确的。
+	2. 将这个tick加入Simulation。
+
+17:57	针对tickEvent，我们在头文件中定义了private成员tickEvent，里面包含三个函数和一个成员。此外，在EventQueue的文件中，我们定义了VDEV的tick任务的优先级。在vdev的C文件中，我们在构建函数中增加了tickEvent，在析构函数中增加了任务的解调度。
+
+2017/12/25
+09:20	对于上述定义的tickEvent继续debug，同时检索如何将tick函数加入Simulation。
+10:30	第一个问题解决了：
+	1. Virtual Device 中的TickEvent目前是正确的，主要问题是定义成员的顺序有问题，为什么？
+	现在解决第二个问题，如何将tick加入Simulation。
+	（1）笨方法：把tickEvent加入到CPU的tick中就好了。
+	（2）想办法和CPU的tickEvent并列。
+
+
+
+
 
 
 

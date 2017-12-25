@@ -16,17 +16,36 @@
 #include <string>
 #include <vector>
 #include "mem/mem_object.hh"
+#include "sim/eventq.hh"
 #include "cpu/base.hh"
 #include "params/VirtualDevice.hh"
 
 class VirtualDevice : public MemObject
 {
+
 protected:
 	/** Id of the virtual device */
 	uint32_t id;
 
 private:
+	/** Definitions of TickEvent in Virtual Device **/
+	/** The behavior is constructed in tick-level */
+	struct TickEvent : public Event
+	{
+		VirtualDevice *vdev;
 
+		TickEvent(VirtualDevice *vdev_this);
+		void process();
+		const char *description() const;
+	};
+
+	TickEvent tickEvent;
+
+	/** Record the execution state and energy consumption. **/
+	void tick();
+
+	/** Definitions of Device Port in Virtual Device **/
+	/** Device Port is a slave Energy Port of vdev to connect to the Energy framework. */
 	class DevicePort : public SlavePort
 	{
 	private:
@@ -41,7 +60,6 @@ private:
 		bool recvTimingReq(PacketPtr pkt);
 		void recvRespRetry();
 		AddrRangeList getAddrRanges() const;
-
 	};
 
 	DevicePort port;
@@ -54,7 +72,7 @@ public:
 		return reinterpret_cast<const Params *>(_params);
 	}
 	VirtualDevice(const Params *p);
-	virtual ~VirtualDevice() {}
+	virtual ~VirtualDevice();
 	virtual void init();
 
 	/* Flags defined be the first byte in the memory. 
@@ -84,8 +102,6 @@ public:
 	void triggerInterrupt();
 	/** Simple method to access data. */
 	Tick access(PacketPtr pkt);
-	/** Record the execution state and energy consumption. **/
-	void tick();
 	/** Handle energy state changes. */
 	virtual int handleMsg(const EnergyMsg &msg);
 	/** Method for python scripts to get port. */
@@ -114,8 +130,9 @@ public:
 	bool need_log;
 	int access_time = 0;
 
-protected:
 
+protected:
+	/** CPU of the device **/
 	BaseCPU *cpu;
 	/** Address range of the virtual device*/
 	AddrRange range;
@@ -143,6 +160,7 @@ protected:
 	virtual bool finishSuccess();
 	/** Implement of memories and registers for the vdev. */
 	uint8_t *pmem;
+
 };
 
 #endif //GEM5_VDEV_HH

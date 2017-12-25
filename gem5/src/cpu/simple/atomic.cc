@@ -74,7 +74,6 @@ AtomicSimpleCPU::TickEvent::TickEvent(AtomicSimpleCPU *c)
 {
 }
 
-
 void
 AtomicSimpleCPU::TickEvent::process()
 {
