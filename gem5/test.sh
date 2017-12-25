@@ -4,7 +4,7 @@ echo "========================================================="
 cap=2
 energy=1
 echo "cap: $cap; entergy: $energy"
-build/ARM/gem5.debug --debug-flag=EnergyMgmt,VirtualDevice --debug-file=virtual_device.o configs/example/test_engy_vdev.py $cap $energy -j2
+build/ARM/gem5.debug --debug-flag=VirtualDevice --debug-file=virtual_device.o configs/example/test_engy_vdev.py $cap $energy -j2
 
 
 #for energy in {100..100}

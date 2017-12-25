@@ -66,6 +66,12 @@
 	（1）笨方法：把tickEvent加入到CPU的tick中就好了。
 	（2）想办法和CPU的tickEvent并列。
 
+11:40	对于VirtualDevice的tick问题，应该是需要加入多线程，每一个线程是一个EventQueue。
+	然后想办法将第一个tickEvent加入到Virtual Device的EventQueue中。
+	注意，Event的process函数在Eventq中的serviceOne函数中调用。
+
+12:13	太复杂了，先出去吃饭。
+
 
 
 

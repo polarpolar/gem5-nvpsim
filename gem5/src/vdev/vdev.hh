@@ -130,6 +130,16 @@ public:
 	bool need_log;
 	int access_time = 0;
 
+	/*inline Tick clockPeriod() const
+	{
+		return ClockedObject::clockPeriod() * clkmult;
+	}
+
+	inline Cycles ticksToCycles(Tick t) const
+	{
+		return ClockedObject::ticksToCycles(t / clkmult);
+	}*/
+
 
 protected:
 	/** CPU of the device **/

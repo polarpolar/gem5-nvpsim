@@ -129,6 +129,8 @@ VirtualDevice::init()
 	DPRINTF(VirtualDevice, "Virtual Device (id = %d) started with range: %#lx - %#lx\n", id, range.start(), range.end());
 
 	vdev_energy_state = STATE_POWEROFF;
+	if (!tickEvent.scheduled())
+		schedule(tickEvent, clockEdge(Cycles(0)));
 }
 
 void
@@ -248,7 +250,29 @@ VirtualDevice::access(PacketPtr pkt)
 void 
 VirtualDevice::tick()
 {
+	// Task Latency
+	Tick latency = clockPeriod();
 	// Set the behavior in time tick grains
+	if (vdev_energy_state != STATE_POWEROFF) {
+		double EngyConsume = 0;
+		// Energy Consumption
+		EngyConsume = energy_consumed_per_cycle_vdev[vdev_energy_state] * ticksToCycles(latency);
+		consumeEnergy(EngyConsume);
+		// Info.
+		switch(vdev_energy_state) {
+			case STATE_POWEROFF:
+				DPRINTF(VirtualDevice, "VirtualDevice id = %d, TickEvent@STATE_POWEROFF, latency = %d tick, Energy = %1f. \n", id, latency, EngyConsume);
+			case STATE_SLEEP:
+				DPRINTF(VirtualDevice, "VirtualDevice id = %d, TickEvent@STATE_SLEEP, latency = %d tick, Energy = %1f. \n", id, latency, EngyConsume);
+			case STATE_ACTIVE:
+				DPRINTF(VirtualDevice, "VirtualDevice id = %d, TickEvent@STATE_ACTIVE, latency = %d tick, Energy = %1f. \n", id, latency, EngyConsume);
+			default:	
+				DPRINTF(EnergyMgmt, "Unrecognized EngyMsg.\n");
+				return;
+		}
+	}
+
+	schedule(tickEvent, curTick() + latency);
 }
 
 int
@@ -256,7 +280,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 {
 	DPRINTF(EnergyMgmt, "Device receives handleMsg at %lu, msg.type=%d\n", curTick(), msg.type);
 	switch(msg.type) {
-			case (int) DFS_LRY::MsgType::RETENTION_BEG:
+		case (int) DFS_LRY::MsgType::RETENTION_BEG:
 			/** VDEV retention **
 			  The virtual device energy mode turns to sleep (low cost), but all the uncompleted tasks are failed. Recover delay contains only 'delay_self' is it is un-interruptable.
 			**/
