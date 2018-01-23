@@ -81,6 +81,7 @@ class AtomicSimpleCPU : public BaseSimpleCPU
 
   private:
 
+    char dev_name[100];
     struct TickEvent : public Event
     {
         AtomicSimpleCPU *cpu;

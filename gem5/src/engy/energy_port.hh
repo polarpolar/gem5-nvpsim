@@ -11,6 +11,7 @@
 struct EnergyMsg
 {
     int32_t type;
+    char* sender;
     double val;
 };
 

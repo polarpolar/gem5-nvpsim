@@ -23,7 +23,7 @@ public:
     virtual ~EnergyMgmt();
     virtual void init();
     /* Harvest energy if val < 0 */
-    virtual int consumeEnergy(double val);
+    virtual int consumeEnergy(char *consumer, double val);
     void broadcastMsg();
     int broadcastMsgAsEvent(const EnergyMsg &msg);
     int handleMsg(const EnergyMsg &msg);

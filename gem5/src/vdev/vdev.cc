@@ -9,6 +9,7 @@
 //	Created by lf-z on 4/24/17
 //
 
+#include <string.h>
 #include "vdev/vdev.hh"
 #include "engy/state_machine.hh"
 #include "debug/EnergyMgmt.hh"
@@ -99,6 +100,7 @@ VirtualDevice::VirtualDevice(const Params *p) :
 	delay_remained(p->delay_remained + p->delay_recover),
 	event_interrupt(this, false, Event::Virtual_Interrupt)
 {
+	sprintf(dev_name, "VDEV-%d", id);
 	trace.resize(0);
 	pmem = (uint8_t*) malloc(range.size() * sizeof(uint8_t));
 	memset(pmem, 0, range.size() * sizeof(uint8_t));
@@ -192,7 +194,7 @@ VirtualDevice::access(PacketPtr pkt)
 						ticksToCycles(delay_set), 
 						energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_set)
 					);
-					consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_set));
+					consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_set));
 					cpu->virtualDeviceSet(delay_set);
 					cpu->virtualDeviceStart(id);
 				}
@@ -232,7 +234,7 @@ VirtualDevice::access(PacketPtr pkt)
 						ticksToCycles(delay_self), 
 						energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_self)
 					);
-					consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_self));
+					consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_self));
 					//cpu->virtualDeviceSet(delay_set);
 					cpu->virtualDeviceStart(id);
 				}
@@ -257,7 +259,7 @@ VirtualDevice::tick()
 		double EngyConsume = 0;
 		// Energy Consumption
 		EngyConsume = energy_consumed_per_cycle_vdev[vdev_energy_state] * ticksToCycles(latency);
-		consumeEnergy(EngyConsume);
+		consumeEnergy(dev_name, EngyConsume);
 		// Info.
 		switch(vdev_energy_state) {
 			case STATE_POWEROFF:
@@ -356,7 +358,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 					ticksToCycles(delay_remained), 
 					energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained)
 				);
-				consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
+				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
 				cpu->virtualDeviceStart(id);
 			}
 			break;
@@ -374,7 +376,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 					ticksToCycles(delay_remained), 
 					energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained)
 				);
-				consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
+				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
 				cpu->virtualDeviceStart(id);
 			}
 			break;

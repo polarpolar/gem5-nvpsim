@@ -57,7 +57,7 @@ void EnergyMgmt::init()
     energyHarvest();
 }
 
-int EnergyMgmt::consumeEnergy(double val)
+int EnergyMgmt::consumeEnergy(char *sender, double val)
 {
     /* Todo: Pass the module which consumed the energy to this function. (Or DPRINTF in the module which consumes energy) */
     /* Consume energy if val > 0, and harvest energy if val < 0 */
@@ -78,7 +78,7 @@ int EnergyMgmt::consumeEnergy(double val)
             energy_remained = lower_bound;
         }
         /**REMOVE**/
-        //DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is consumed by xxx. Energy remained: %lf\n", cons_unit, energy_remained);
+        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
         /*if (cons_unit) {
             DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Lower Bound! capacity: %lf, energy: %lf\n", capacity, energy_remained);
         }*/
@@ -150,7 +150,7 @@ int EnergyMgmt::handleMsg(const EnergyMsg &msg)
     if (msg.type != DFS_LRY::MsgType::CONSUMEENERGY)
         return 0;
 
-    return consumeEnergy(msg.val);
+    return consumeEnergy(msg.sender, msg.val);
 }
 
 std::vector<double> EnergyMgmt::readEnergyProfile()
@@ -181,7 +181,9 @@ void EnergyMgmt::energyHarvest()
         return;
 
     double energy_val = energy_harvest_data.back();
-    consumeEnergy(-energy_val);
+    char dev_name[100];
+    strcpy(dev_name, "harvester");
+    consumeEnergy(dev_name, -energy_val);
     energy_harvest_data.pop_back();
 
     /* Trigger the next harvest function. */

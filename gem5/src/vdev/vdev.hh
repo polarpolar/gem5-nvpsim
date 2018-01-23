@@ -26,6 +26,7 @@ class VirtualDevice : public MemObject
 protected:
 	/** Id of the virtual device */
 	uint32_t id;
+	char dev_name[100];
 
 private:
 	/** Definitions of TickEvent in Virtual Device **/

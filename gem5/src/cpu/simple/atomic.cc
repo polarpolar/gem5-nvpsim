@@ -41,6 +41,7 @@
  * Authors: Steve Reinhardt
  */
 
+#include <string.h>
 #include "arch/locked_mem.hh"
 #include "arch/mmapped_ipr.hh"
 #include "arch/utility.hh"
@@ -138,6 +139,7 @@ AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
       ppCommit(nullptr), energy_consumed_per_cycle(0),
       in_interrupt(0)
 {
+    strcpy(dev_name, "AtomicCPU");
     _status = Idle;
     lat_poweron = 0;
 }
@@ -649,7 +651,7 @@ AtomicSimpleCPU::tick()
     if (latency < clockPeriod())
         latency = clockPeriod();
 
-    consumeEnergy(energy_consumed_per_cycle * ticksToCycles(latency));
+    consumeEnergy(dev_name, energy_consumed_per_cycle * ticksToCycles(latency));
 
     if (_status != Idle)
         schedule(tickEvent, curTick() + latency);
@@ -796,8 +798,8 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
             energy_consumed_per_cycle = energy_consumed_per_cycle_1;
             //开机惩罚耗能
             consumeEnergy(
-              energy_consumed_poweron + 
-              energy_consumed_per_cycle * ticksToCycles(
+                dev_name,
+                energy_consumed_poweron + energy_consumed_per_cycle * ticksToCycles(
                 lat_poweron + BaseCPU::getTotalLat()
               )
             );
