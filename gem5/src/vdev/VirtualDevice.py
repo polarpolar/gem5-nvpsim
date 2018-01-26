@@ -6,6 +6,7 @@ class VirtualDevice(MemObject):
     type = 'VirtualDevice'
     cxx_header = 'vdev/vdev.hh'
     port = SlavePort("Slave port of virtual device.")
+    id = Param.Int('0', "Id of the virtual device.")
     delay_self = Param.Clock('1ms', "delay of device to finish its mission")
     delay_set = Param.Clock('0t', "delay to set up the device")
     delay_recover = Param.Clock('0t', "time that the cpu spend to recover the device after a power failure")

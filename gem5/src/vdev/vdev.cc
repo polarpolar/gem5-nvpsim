@@ -86,7 +86,7 @@ VirtualDevice::DevicePort::getAddrRanges() const
 
 VirtualDevice::VirtualDevice(const Params *p) : 
 	MemObject(p),
-	id(0),
+	id(p->id),
 	tickEvent(this),
 	port(name() + ".port", this),
 	need_log(p->need_log),
@@ -101,6 +101,7 @@ VirtualDevice::VirtualDevice(const Params *p) :
 	event_interrupt(this, false, Event::Virtual_Interrupt)
 {
 	sprintf(dev_name, "VDEV-%d", id);
+	DPRINTF(VirtualDevice, "VDEV(%d) is defined as %s.\n", id, dev_name);
 	trace.resize(0);
 	pmem = (uint8_t*) malloc(range.size() * sizeof(uint8_t));
 	memset(pmem, 0, range.size() * sizeof(uint8_t));
@@ -194,7 +195,7 @@ VirtualDevice::access(PacketPtr pkt)
 						ticksToCycles(delay_set), 
 						energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_set)
 					);
-					consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_set));
+					//consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_set));
 					cpu->virtualDeviceSet(delay_set);
 					cpu->virtualDeviceStart(id);
 				}
@@ -263,13 +264,19 @@ VirtualDevice::tick()
 		// Info.
 		switch(vdev_energy_state) {
 			case STATE_POWEROFF:
-				DPRINTF(VirtualDevice, "VirtualDevice id = %d, TickEvent@STATE_POWEROFF, latency = %d tick, Energy = %1f. \n", id, latency, EngyConsume);
+				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_POWEROFF] * ticksToCycles(latency));
+				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_POWEROFF, Energy = %1f. \n", dev_name, id, EngyConsume);
+				//break;
 			case STATE_SLEEP:
-				DPRINTF(VirtualDevice, "VirtualDevice id = %d, TickEvent@STATE_SLEEP, latency = %d tick, Energy = %1f. \n", id, latency, EngyConsume);
+				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_SLEEP] * ticksToCycles(latency));
+				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_SLEEP, Energy = %1f. \n", dev_name, id, EngyConsume);
+				//break;
 			case STATE_ACTIVE:
-				DPRINTF(VirtualDevice, "VirtualDevice id = %d, TickEvent@STATE_ACTIVE, latency = %d tick, Energy = %1f. \n", id, latency, EngyConsume);
+				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(latency));
+				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_ACTIVE, Energy = %1f. \n", dev_name, id, EngyConsume);
+				//break;
 			default:	
-				DPRINTF(EnergyMgmt, "Unrecognized EngyMsg.\n");
+				//DPRINTF(EnergyMgmt, "State = %d, Unrecognized EngyMsg.\n", vdev_energy_state);
 				return;
 		}
 	}
@@ -358,7 +365,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 					ticksToCycles(delay_remained), 
 					energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained)
 				);
-				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
+				//consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
 				cpu->virtualDeviceStart(id);
 			}
 			break;
@@ -376,7 +383,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 					ticksToCycles(delay_remained), 
 					energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained)
 				);
-				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
+				//consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
 				cpu->virtualDeviceStart(id);
 			}
 			break;

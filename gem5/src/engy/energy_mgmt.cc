@@ -3,6 +3,7 @@
 //
 #include <fstream>
 #include <math.h>
+#include <string.h>
 #include "engy/energy_mgmt.hh"
 #include "engy/state_machine.hh"
 #include "engy/harvest.hh"
@@ -78,6 +79,7 @@ int EnergyMgmt::consumeEnergy(char *sender, double val)
             energy_remained = lower_bound;
         }
         /**REMOVE**/
+        if (strcmp(sender, "AtomicCPU")==0)    return 1;
         DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
         /*if (cons_unit) {
             DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Lower Bound! capacity: %lf, energy: %lf\n", capacity, energy_remained);
@@ -108,13 +110,13 @@ int EnergyMgmt::consumeEnergy(char *sender, double val)
             energy_remained = lower_bound;
         }
         /**REMOVED**/
-        //DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", harv_unit, energy_remained);
+        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", (harv_unit-energy_consumed_per_harvest), energy_remained);
         /*if (harv_unit) {
             DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Upper Bound! capacity: %lf, energy: %lf\n", capacity, upper_bound);
         }*/
     }
     
-    DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Remained: %lf\n", energy_remained);
+    //DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Remained: %lf\n", energy_remained);
     state_machine->update(energy_remained);
 
     return 1;

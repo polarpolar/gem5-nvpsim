@@ -78,6 +78,7 @@ system.mem_ctrl.port = system.membus.master
 system.system_port = system.membus.slave
 
 system.vdev1 = VirtualDevice()
+system.vdev1.id = 1;
 system.vdev1.cpu = system.cpu
 system.vdev1.range = system.vdev_ranges[0]
 system.vdev1.energy_consumed_per_cycle_vdev = [Float(0), Float(0.03), Float(1.35)] # The energy consumption of each cycle at power-off, idle and active mode.
@@ -90,6 +91,7 @@ system.vdev1.port = system.membus.master
 system.vdev1.s_energy_port = system.energy_mgmt.m_energy_port
 
 system.vdev2 = VirtualDevice()
+system.vdev2.id = 2;
 system.vdev2.cpu = system.cpu
 system.vdev2.range = system.vdev_ranges[1]
 system.vdev2.energy_consumed_per_cycle_vdev = [Float(0), Float(0.26), Float(0.416)] # The energy consumption of each cycle at power-off, idle and active mode.
@@ -102,6 +104,7 @@ system.vdev2.port = system.membus.master
 system.vdev2.s_energy_port = system.energy_mgmt.m_energy_port
 
 system.vdev3 = VirtualDevice()
+system.vdev3.id = 3;
 system.vdev3.cpu = system.cpu
 system.vdev3.range = system.vdev_ranges[2]
 system.vdev3.energy_consumed_per_cycle_vdev = [Float(0), Float(0.12), Float(11.9)] # The energy consumption of each cycle at power-off, idle and active mode.

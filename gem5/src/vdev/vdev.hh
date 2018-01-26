@@ -161,8 +161,8 @@ protected:
 	bool is_interruptable;
 	/** When power off, time is remained for the task */
 	Tick delay_remained;
-	/** Energy consumption in different modes : **/
-	double energy_consumed_per_cycle_vdev[3] = {0, 0.25*1000, 1.75*1000};
+	/** Energy consumption in different modes : (*1000?)**/
+	double energy_consumed_per_cycle_vdev[3] = {0, 0.25, 1.75};
 	/** Energy modes of vdev : [OFF, SLEEP, ACTIVE]; **/
 	State vdev_energy_state = STATE_POWEROFF;
 
