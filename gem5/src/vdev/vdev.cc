@@ -101,7 +101,6 @@ VirtualDevice::VirtualDevice(const Params *p) :
 	event_interrupt(this, false, Event::Virtual_Interrupt)
 {
 	sprintf(dev_name, "VDEV-%d", id);
-	DPRINTF(VirtualDevice, "VDEV(%d) is defined as %s.\n", id, dev_name);
 	trace.resize(0);
 	pmem = (uint8_t*) malloc(range.size() * sizeof(uint8_t));
 	memset(pmem, 0, range.size() * sizeof(uint8_t));
@@ -129,7 +128,7 @@ VirtualDevice::init()
 	}
 
 	cpu->registerVDev(delay_recover, id);
-	DPRINTF(VirtualDevice, "Virtual Device (id = %d) started with range: %#lx - %#lx\n", id, range.start(), range.end());
+	DPRINTF(VirtualDevice, "VDEV(%d) name: %s, range: %#lx - %#lx.\n", id, dev_name, range.start(), range.end());
 
 	vdev_energy_state = STATE_POWEROFF;
 	if (!tickEvent.scheduled())
@@ -258,27 +257,24 @@ VirtualDevice::tick()
 	// Set the behavior in time tick grains
 	if (vdev_energy_state != STATE_POWEROFF) {
 		double EngyConsume = 0;
-		// Energy Consumption
-		EngyConsume = energy_consumed_per_cycle_vdev[vdev_energy_state] * ticksToCycles(latency);
-		consumeEnergy(dev_name, EngyConsume);
 		// Info.
 		switch(vdev_energy_state) {
 			case STATE_POWEROFF:
-				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_POWEROFF] * ticksToCycles(latency));
-				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_POWEROFF, Energy = %1f. \n", dev_name, id, EngyConsume);
+				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_POWEROFF, Energy = %lf.\n", dev_name, EngyConsume);
 				//break;
 			case STATE_SLEEP:
-				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_SLEEP] * ticksToCycles(latency));
-				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_SLEEP, Energy = %1f. \n", dev_name, id, EngyConsume);
+				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_SLEEP, Energy = %lf.\n", dev_name, EngyConsume);
 				//break;
 			case STATE_ACTIVE:
-				consumeEnergy(dev_name, energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(latency));
-				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_ACTIVE, Energy = %1f. \n", dev_name, id, EngyConsume);
+				DPRINTF(EnergyMgmt, "%s, TickEvent@STATE_ACTIVE, Energy = %lf.\n", dev_name, EngyConsume);
 				//break;
 			default:	
 				//DPRINTF(EnergyMgmt, "State = %d, Unrecognized EngyMsg.\n", vdev_energy_state);
 				return;
 		}
+		// Energy Consumption
+		EngyConsume = energy_consumed_per_cycle_vdev[vdev_energy_state] * ticksToCycles(latency);
+		consumeEnergy(dev_name, EngyConsume);
 	}
 
 	schedule(tickEvent, curTick() + latency);
@@ -287,13 +283,13 @@ VirtualDevice::tick()
 int
 VirtualDevice::handleMsg(const EnergyMsg &msg)
 {
-	DPRINTF(EnergyMgmt, "Device receives handleMsg at %lu, msg.type=%d\n", curTick(), msg.type);
+	//(EnergyMgmt, "%s receives handleMsg at %lu, msg.type=%d\n", dev_name, curTick(), msg.type);
 	switch(msg.type) {
 		case (int) DFS_LRY::MsgType::RETENTION_BEG:
 			/** VDEV retention **
 			  The virtual device energy mode turns to sleep (low cost), but all the uncompleted tasks are failed. Recover delay contains only 'delay_self' is it is un-interruptable.
 			**/
-			DPRINTF(EnergyMgmt, "The Msg is Enter-Retention.\n");
+			DPRINTF(EnergyMgmt, "%s receives Enter-Retention Msg at %lu, msg.type=%d\n", dev_name, curTick(), msg.type);
 			vdev_energy_state = STATE_SLEEP;
 			if (*pmem & VDEV_BUSY) {
 				/* This should be handled if the device is on a task */
@@ -312,7 +308,6 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 				} else {
 					delay_remained = event_interrupt.when() - curTick();
 				}
-
 				deschedule(event_interrupt);
 			}
 			break;
@@ -320,7 +315,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			/** VDEV shutdown **
 			  The virtual device completed failed. It becomes un-initialized and needs re-initialization. If it is un-interruptable and fails during busy state, it also needs to restart and rerun the task with 'delay_self'. The device requires a recover time ('delay_recover') to support the reinitialization and restart procedure. 
 			**/
-			DPRINTF(EnergyMgmt, "The Msg is Enter-Power-Off.\n");
+			DPRINTF(EnergyMgmt, "%s receives Enter-Power-Off Msg at %lu, msg.type=%d\n", dev_name, curTick(), msg.type);
 			/* Reset the states */
 			*pmem |= VDEV_RAW;
 			*pmem &= ~VDEV_READY;
@@ -352,7 +347,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			break;
 		case (int) DFS_LRY::MsgType::RETENTION_END:
 			/** VDEV recover from retention **/
-			DPRINTF(EnergyMgmt, "The Msg is Retention-to-Active.\n");
+			DPRINTF(EnergyMgmt, "%s receives Retention-to-Active Msg at %lu, msg.type=%d\n", dev_name, curTick(), msg.type);
 			vdev_energy_state = STATE_ACTIVE;
 			if (*pmem & VDEV_BUSY) 
 			{
@@ -360,8 +355,8 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 				DPRINTF(VirtualDevice, "device recover from retention to finish a task at %lu\n", curTick());
 				schedule(event_interrupt, curTick() + delay_remained);
 				/* Energy consumption. */
-				DPRINTF(VirtualDevice, "Need Ticks: %i, Cycles: %i, Energy: %lf .\n", 
-					delay_remained, 
+				DPRINTF(VirtualDevice, "%s Need %i Cycles, Energy: %lf.\n", 
+					dev_name, 
 					ticksToCycles(delay_remained), 
 					energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained)
 				);
@@ -378,8 +373,8 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 				DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
 				schedule(event_interrupt, curTick() + delay_remained);
 				/** Energy consumption **/
-				DPRINTF(VirtualDevice, "Need Ticks: %i, Cycles: %i, Energy: %lf .\n", 
-					delay_remained, 
+				DPRINTF(VirtualDevice, "%s Need %i Cycles, Energy: %lf.\n", 
+					dev_name, 
 					ticksToCycles(delay_remained), 
 					energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained)
 				);

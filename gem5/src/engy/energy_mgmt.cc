@@ -80,7 +80,7 @@ int EnergyMgmt::consumeEnergy(char *sender, double val)
         }
         /**REMOVE**/
         if (strcmp(sender, "AtomicCPU")==0)    return 1;
-        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
+        DPRINTF(EnergyMgmt, "Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
         /*if (cons_unit) {
             DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Lower Bound! capacity: %lf, energy: %lf\n", capacity, energy_remained);
         }*/
@@ -110,7 +110,7 @@ int EnergyMgmt::consumeEnergy(char *sender, double val)
             energy_remained = lower_bound;
         }
         /**REMOVED**/
-        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", (harv_unit-energy_consumed_per_harvest), energy_remained);
+        //DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", (harv_unit-energy_consumed_per_harvest), energy_remained);
         /*if (harv_unit) {
             DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Upper Bound! capacity: %lf, energy: %lf\n", capacity, upper_bound);
         }*/
@@ -146,7 +146,7 @@ int EnergyMgmt::handleMsg(const EnergyMsg &msg)
 {
     /**REMOVE**/
     if (msg.type != 0) // msg.type = 0 means consume.
-        DPRINTF(EnergyMgmt, "[EnergyMgmt] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+        DPRINTF(EnergyMgmt, " handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
     /* msg type should be 0 here, for 0 represents energy consuming, */
     /* and EnergyMgmt module can only handle energy consuming msg*/
     if (msg.type != DFS_LRY::MsgType::CONSUMEENERGY)
