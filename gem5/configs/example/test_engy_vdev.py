@@ -22,7 +22,7 @@ system.vaddr_vdev_ranges = [AddrRange('1000MB', '1000MB'), AddrRange('1001MB', '
 ###
 
 #energy mgmt
-system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/powerofficeuw1e4.txt', energy_time_unit = '10us')
+system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/solar_new2.txt', energy_time_unit = '10us')
 system.energy_mgmt.state_machine = DFS_LRY()
 system.energy_mgmt.state_machine.thres_5_to_4 = 1000000000000
 system.energy_mgmt.state_machine.thres_4_to_3 = 1000000000000

@@ -164,7 +164,7 @@ protected:
 	/** Energy consumption in different modes : (*1000?)**/
 	double energy_consumed_per_cycle_vdev[3] = {0, 0.25, 1.75};
 	/** Energy modes of vdev : [OFF, SLEEP, ACTIVE]; **/
-	State vdev_energy_state = STATE_POWEROFF;
+	State vdev_energy_state;
 
 	EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_interrupt;
 	/** Tell whether the task is successful */

@@ -78,45 +78,37 @@ int EnergyMgmt::consumeEnergy(char *sender, double val)
             cons_unit -= (lower_bound - energy_remained);
             energy_remained = lower_bound;
         }
-        /**REMOVE**/
-        if (strcmp(sender, "AtomicCPU")==0)    return 1;
-        DPRINTF(EnergyMgmt, "Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
-        /*if (cons_unit) {
-            DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Lower Bound! capacity: %lf, energy: %lf\n", capacity, energy_remained);
-        }*/
+        if (strcmp(sender, "VDEV-2")==0 && curTick()%10000 == 0)
+            DPRINTF(EnergyMgmt, "Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
     } 
 
     // Energy Harvesting, if val > 0
     else {
-        // This is energy harvesting
-        val *= energy_profile_mult;
-        energy_remained = harvest_module->energy_harvest(-val, energy_remained);
-        harv_unit = -val;
+        // energy leakage!
         if (DFS_LRY_poweron_dirty_patch)
         {
-            /**REMOVE**/
-            //energy leakage!
-            //DPRINTF(EnergyMgmt, "Leakage: %lf\n", energy_consumed_per_harvest);
             energy_remained -= energy_consumed_per_harvest;
+            //DPRINTF(EnergyMgmt, "[EngyMgmt] Leakage energy is %lf. Energy remained: %lf\n", energy_consumed_per_harvest, energy_remained);
         }
+
+        // energy harvesting        
+        val *= energy_profile_mult;
+        harv_unit = -val;
+        energy_remained = harvest_module->energy_harvest(-val, energy_remained);
 
         // The energy storage has a upper bound
         if (energy_remained > upper_bound) {
             harv_unit -= (energy_remained - upper_bound);
             energy_remained = upper_bound;
         }
-        // consider of leakage, the system may still lose energy after harvesting.
+        // consider of leakage, the system may fall below lower bound.
         else if (energy_remained < lower_bound) {
             energy_remained = lower_bound;
         }
-        /**REMOVED**/
-        //DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", (harv_unit-energy_consumed_per_harvest), energy_remained);
-        /*if (harv_unit) {
-            DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Storage Meets Upper Bound! capacity: %lf, energy: %lf\n", capacity, upper_bound);
-        }*/
+        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", harv_unit, energy_remained);
     }
     
-    //DPRINTF(EnergyMgmt, "[EngyMgmt] Energy Remained: %lf\n", energy_remained);
+    // judge if energy_remained triggers state_machine changes
     state_machine->update(energy_remained);
 
     return 1;
