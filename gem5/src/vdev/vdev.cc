@@ -293,7 +293,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			if (*pmem & VDEV_BUSY) {
 				/* This should be handled if the device is on a task */
 				assert(event_interrupt.scheduled());
-				DPRINTF(VirtualDevice, "Device retention occurs in the middle of a task at %lu\n", curTick());
+				DPRINTF(VirtualDevice, "%s retention occurs in the middle of a task.\n", dev_name;
 
 				/* Calculate the remaining delay*/
 				if (!is_interruptable) {
@@ -321,7 +321,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			/* Todo: if entered from retention */
 			if (vdev_energy_state == STATE_SLEEP) {
 				assert(!event_interrupt.scheduled());
-				DPRINTF(VirtualDevice, "device power off occurs during retention at %lu\n", curTick());
+				DPRINTF(VirtualDevice, "%s power off occurs during retention.\n", dev_name);
 				/* delay_remained updates with punishment */
 				Tick delay_punish = 0;
 				delay_remained += delay_recover + delay_set + delay_punish;
@@ -331,7 +331,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 				delay_remained = delay_recover + delay_set;
 				if (*pmem & VDEV_BUSY) {
 					assert(event_interrupt.scheduled());
-					DPRINTF(VirtualDevice, "device power off occurs in the middle of a task at %lu\n", curTick());
+					DPRINTF(VirtualDevice, "%s power off occurs in the middle of a task.\n", dev_name);
 					if (!is_interruptable) {
 						delay_remained += delay_self;
 					} else {
