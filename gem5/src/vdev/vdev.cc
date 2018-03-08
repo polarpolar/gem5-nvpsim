@@ -293,7 +293,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 			if (*pmem & VDEV_BUSY) {
 				/* This should be handled if the device is on a task */
 				assert(event_interrupt.scheduled());
-				DPRINTF(VirtualDevice, "%s retention occurs in the middle of a task.\n", dev_name;
+				DPRINTF(VirtualDevice, "%s retention occurs in the middle of a task.\n", dev_name);
 
 				/* Calculate the remaining delay*/
 				if (!is_interruptable) {
