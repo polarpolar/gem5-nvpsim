@@ -23,26 +23,17 @@ system.vaddr_vdev_ranges = [AddrRange('1000MB', '1000MB'), AddrRange('1001MB', '
 
 #energy mgmt
 system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/solar_new2.txt', energy_time_unit = '10us')
-system.energy_mgmt.state_machine = DFS_LRY()
-system.energy_mgmt.state_machine.thres_5_to_4 = 1000000000000
-system.energy_mgmt.state_machine.thres_4_to_3 = 1000000000000
-system.energy_mgmt.state_machine.thres_3_to_2 = 1000000000000
-system.energy_mgmt.state_machine.thres_2_to_1 = 1000000000000
-system.energy_mgmt.state_machine.thres_1_to_retention = 0.5 * cap * 1000 * 2 * 2
-system.energy_mgmt.state_machine.thres_retention_to_off = 0.5 * cap * 1000 * 1.1 * 1.1
-
+system.energy_mgmt.state_machine = SimpleEnergySM()
+system.energy_mgmt.state_machine.thres_1_to_off = 0.5 * cap * 1000 * 1.1 * 1.1
 system.energy_mgmt.state_machine.thres_off_to_1 = 0.5 * cap * 1000 * 4.5 *4.5
-system.energy_mgmt.state_machine.thres_retention_to_1 = 0.5 * cap * 1000 * 4.5 *4.5
-system.energy_mgmt.state_machine.thres_1_to_2 = 1000000000000
-system.energy_mgmt.state_machine.thres_2_to_3 = 1000000000000
-system.energy_mgmt.state_machine.thres_3_to_4 = 1000000000000
-system.energy_mgmt.state_machine.thres_4_to_5 = 1000000000000
 
 
+print "Full cap: %f.\n" %(0.5 * cap * 1000 * 5 * 5)
+print "thres_1_to_off: %f.\n" %(system.energy_mgmt.state_machine.thres_1_to_off)
 print "thres_off_to_1: %f.\n" %(system.energy_mgmt.state_machine.thres_off_to_1)
 
 system.energy_mgmt.capacity = cap;	#uF
-system.energy_mgmt.energy_consumed_per_harvest = 0.02;  # leakage
+system.energy_mgmt.system_leakage = 0.02;  # leakage
 system.energy_mgmt.energy_profile_mult = profilemult; 
 ###
 

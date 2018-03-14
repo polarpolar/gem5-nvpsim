@@ -5,11 +5,10 @@
 #ifndef GEM5_ENGY_HH
 #define GEM5_ENGY_HH
 
+#include "engy/energy_harvester.hh"
+#include "engy/state_machine.hh"
 #include "sim/sim_object.hh"
 #include "params/EnergyMgmt.hh"
-
-class BaseEnergySM;
-class BaseHarvest;
 
 class EnergyMgmt : public SimObject
 {
@@ -22,13 +21,13 @@ public:
     EnergyMgmt(const Params *p);
     virtual ~EnergyMgmt();
     virtual void init();
-    /* Harvest energy if val < 0 */
+    // Harvest energy if val < 0
     virtual int consumeEnergy(char *consumer, double val);
     void broadcastMsg();
     int broadcastMsgAsEvent(const EnergyMsg &msg);
     int handleMsg(const EnergyMsg &msg);
 
-		double energy_consumed_per_harvest;
+		double system_leakage;
 		double energy_profile_mult;
 protected:
     Tick time_unit;
@@ -40,8 +39,14 @@ protected:
     void energyHarvest();
     EventWrapper<EnergyMgmt, &EnergyMgmt::energyHarvest> event_energy_harvest;
     BaseEnergySM *state_machine;
-    BaseHarvest *harvest_module;
+    BaseHarvester *harvest_module;
     double capacity;
+
+    // for all SMs, the consuming msg must be 0.
+    enum MsgType
+    {
+        CONSUME_ENERGY = 0
+    };
 
 private:
     std::vector<double> readEnergyProfile();

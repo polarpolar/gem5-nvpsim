@@ -699,6 +699,11 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
     return rlt;
 }*/
 
+int
+AtomicSimpleCPU::handleMsg(const EnergyMsg &msg) {
+    return 0;
+}
+
 /*
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
@@ -742,6 +747,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 }
 */
 
+/*
 //Msg handle for DFS_LRY
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
@@ -858,7 +864,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
             rlt = 0;
     }
     return rlt;
-}
+}*/
 
 int
 AtomicSimpleCPU::virtualDeviceDelay(Tick tick)

@@ -36,7 +36,7 @@ system.energy_mgmt.state_machine.thres_4_to_5 = 1000000000000
 
 
 system.energy_mgmt.capacity = cap;	#uF
-system.energy_mgmt.energy_consumed_per_harvest = 0.02; 
+system.energy_mgmt.system_leakage = 0.02; 
 system.energy_mgmt.energy_profile_mult = engy_supply_para; 
 ###
 

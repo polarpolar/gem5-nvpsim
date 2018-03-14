@@ -1,61 +1,76 @@
 //
 // Created by lf-z on 3/13/17.
+// Update by tongda on 3/14/18.
 //
 
 #include "engy/state_machine.hh"
 #include "debug/EnergyMgmt.hh"
 
-BaseEnergySM::BaseEnergySM(const Params *p)
-    : SimObject(p), mgmt(NULL)
+/******* BaseEnergySM *******/
+BaseEnergySM::BaseEnergySM(const Params *p) : SimObject(p), mgmt(NULL)
 {
-    energy_consume_lower_bound = 0;
+	energy_consume_lower_bound = 0;
 }
 
-void BaseEnergySM::broadcastMsg(const EnergyMsg &msg)
+void 
+BaseEnergySM::broadcastMsg(const EnergyMsg &msg)
 {
-    mgmt->broadcastMsgAsEvent(msg);
+	mgmt->broadcastMsgAsEvent(msg);
 }
 
-SimpleEnergySM::SimpleEnergySM(const Params *p)
-        : BaseEnergySM(p), state(SimpleEnergySM::State::STATE_INIT)
+/******* SimpleEnergySM *******/
+SimpleEnergySM::SimpleEnergySM(const Params *p) : 
+	BaseEnergySM(p), 
+	state(SimpleEnergySM::State::STATE_POWER_OFF),
+	thres_1_to_off(p->thres_1_to_off),
+	thres_off_to_1(p->thres_off_to_1)
 {
-
+	// when the system cannot consume energy
+	energy_consume_lower_bound = thres_1_to_off;
 }
 
-void SimpleEnergySM::init()
+void 
+SimpleEnergySM::init()
 {
-    state = State::STATE_POWERON;
-    energy_consume_lower_bound = 0;
+	EnergyMsg msg;
+	msg.val = 0;
+	state = State::STATE_POWER_OFF;
+	msg.type = MsgType::POWER_OFF;
+	broadcastMsg(msg);
 }
 
 void SimpleEnergySM::update(double _energy)
 {
-    EnergyMsg msg;
-    msg.val = 0;
+	EnergyMsg msg;
+	msg.val = 0;
 
-    if (state == STATE_INIT) {
-        state = STATE_POWERON;
-    } else if (state == STATE_POWERON && _energy < 0) {
-        state = STATE_POWEROFF;
-        msg.type = MsgType ::POWEROFF;
-        DPRINTF(EnergyMgmt, "[SimpleEnergySM] SimpleEnergySM: state: power off. \n");
-        broadcastMsg(msg);
-    } else if (state == STATE_POWEROFF && _energy > 0) {
-        state = STATE_POWERON;
-        msg.type = MsgType::POWERON;
-        DPRINTF(EnergyMgmt, "[SimpleEnergySM] SimpleEnergySM: state: power on. \n");
-        broadcastMsg(msg);
-    }
+	// power failure
+	if (state == STATE_POWER_ON && _energy <= thres_off_to_1) 
+	{
+		state = State::STATE_POWER_OFF;
+		msg.type = MsgType::POWER_OFF;
+		DPRINTF(EnergyMgmt, "[SimpleEnergySM] State change: POWER_ON->POWER_OFF, energy=%lf, thres=%lf.\n", _energy, thres_1_to_off);
+		broadcastMsg(msg);
+	} 
+
+	// power recovery
+	else if (state == State::STATE_POWER_OFF && _energy >= thres_off_to_1) 
+	{
+		state = State::STATE_POWER_ON;
+		msg.type = MsgType::POWER_ON;
+		DPRINTF(EnergyMgmt, "[SimpleEnergySM] State change: POWER_OFF->POWER_ON, energy=%lf, thres=%lf.\n", _energy, thres_off_to_1);
+		broadcastMsg(msg);
+	}
 }
 
 BaseEnergySM *
 BaseEnergySMParams::create()
 {
-    return new BaseEnergySM(this);
+	return new BaseEnergySM(this);
 }
 
 SimpleEnergySM *
 SimpleEnergySMParams::create()
 {
-    return new SimpleEnergySM(this);
+	return new SimpleEnergySM(this);
 }

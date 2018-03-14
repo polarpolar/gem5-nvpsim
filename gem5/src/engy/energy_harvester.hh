@@ -6,19 +6,19 @@
 #define GEM5_HARVEST_HH
 
 #include "sim/sim_object.hh"
-#include "params/BaseHarvest.hh"
-#include "params/SimpleHarvest.hh"
+#include "params/BaseHarvester.hh"
+#include "params/SimpleHarvester.hh"
 
-class BaseHarvest : public SimObject
+class BaseHarvester : public SimObject
 {
 public:
-    typedef BaseHarvestParams Params;
+    typedef BaseHarvesterParams Params;
     const Params *params() const
     {
         return reinterpret_cast<const Params *>(_params);
     }
-    BaseHarvest(const Params *p) : SimObject(p) {}
-    virtual ~BaseHarvest() {}
+    BaseHarvester(const Params *p) : SimObject(p) {}
+    virtual ~BaseHarvester() {}
     virtual void init() {}
 public:
     /* Return energy remained after harvesting energy */
@@ -28,16 +28,16 @@ public:
     }
 };
 
-class SimpleHarvest : public BaseHarvest
+class SimpleHarvester : public BaseHarvester
 {
 public:
-    typedef SimpleHarvestParams Params;
+    typedef SimpleHarvesterParams Params;
     const Params *params() const
     {
         return reinterpret_cast<const Params *>(_params);
     }
-    SimpleHarvest(const Params *p) : BaseHarvest(p) {}
-    virtual ~SimpleHarvest() {}
+    SimpleHarvester(const Params *p) : BaseHarvester(p) {}
+    virtual ~SimpleHarvester() {}
     virtual void init();
 public:
     double energy_harvest(double energy_harvested, double energy_remained);

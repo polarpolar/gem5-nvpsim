@@ -94,7 +94,7 @@ public:
 	*/
 	static const uint8_t VDEV_INIT		= 0x80;
 	static const uint8_t VDEV_ACTIVATE	= 0x40;
-	static const uint8_t VDEV_RAW		= 0x08;
+	static const uint8_t VDEV_CHAOS		= 0x08;
 	static const uint8_t VDEV_READY		= 0x04;
 	static const uint8_t VDEV_BUSY		= 0x02;
 	static const uint8_t VDEV_IDLE		= 0x01;
@@ -116,16 +116,17 @@ public:
 	bool recvTimingReq(PacketPtr pkt);
 	void recvRespRetry();
 
-	/** State related parameters **/
+	/** Vdev Energy State related parameters **/
 	/* Three states are defined as energy modes, that are: 
 	 	power-off 	: totally fail, execution state = raw;
 	 	sleep  		: low power mode, only keep the status, cannot execute operations
 	 	active 	 	: full power mode, can carry on all the operations
 	*/
-	enum State {
-		STATE_POWEROFF 	= 0,
-		STATE_SLEEP 	= 1,
-		STATE_ACTIVE 	= 2
+	enum VdevEngyState {
+		POWER_OFF 	= 0,
+		SLEEP 	= 1,
+		ACCESS 	= 2,
+		ACTIVE 	= 3
 	};
 
 	bool need_log;
@@ -164,7 +165,7 @@ protected:
 	/** Energy consumption in different modes : (*1000?)**/
 	double energy_consumed_per_cycle_vdev[3] = {0, 0.25, 1.75};
 	/** Energy modes of vdev : [OFF, SLEEP, ACTIVE]; **/
-	State vdev_energy_state;
+	VdevEngyState vdev_energy_state;
 
 	EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_interrupt;
 	/** Tell whether the task is successful */

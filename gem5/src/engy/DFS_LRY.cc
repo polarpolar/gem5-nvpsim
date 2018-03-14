@@ -1,10 +1,7 @@
 #include "DFS_LRY.hh"
 #include "debug/EnergyMgmt.hh"
 
-//这个全局变量用于通知energy_mgmt现在系统的状态
-//不知道为啥energy_mgmt收不到msg，所以只能将就这么搞了
 bool DFS_LRY_poweron_dirty_patch = false;
-
 
 DFS_LRY::DFS_LRY(const Params *p)
     : BaseEnergySM(p), 

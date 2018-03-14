@@ -10,56 +10,61 @@
 #include "params/BaseEnergySM.hh"
 #include "params/SimpleEnergySM.hh"
 
+class EnergyMgmt;
+
+/********* Basic Energy SM ***********/
 class BaseEnergySM : public SimObject
 {
-    /* Set EnergyMgmt as friend class so that mgmt can be initialized. */
-    friend class EnergyMgmt;
+	/* Set EnergyMgmt as friend class so that this->mgmt can be initialized. */
+	friend class EnergyMgmt;
 public:
-    typedef BaseEnergySMParams Params;
-    const Params *params() const
-    {
-        return reinterpret_cast<const Params *>(_params);
-    }
-    BaseEnergySM(const Params *p);
-    virtual ~BaseEnergySM() {}
-    virtual void init() {}
-    virtual void update(double _energy) {}
+	typedef	 BaseEnergySMParams Params;
+	const Params *params() const
+	{
+		return reinterpret_cast<const Params *>(_params);
+	}
+	BaseEnergySM(const Params *p);
+	virtual ~BaseEnergySM() {}
+	virtual void init() {}
+	virtual void update(double _energy) {}
 
 protected:
-    void broadcastMsg(const EnergyMsg &msg);
-    EnergyMgmt *mgmt;
-    double energy_consume_lower_bound;
+	EnergyMgmt *mgmt;
+	void broadcastMsg(const EnergyMsg &msg);
+	double energy_consume_lower_bound;
 };
 
+/********* Simple Energy SM ***********/
 class SimpleEnergySM : public BaseEnergySM
 {
 public:
-    typedef SimpleEnergySMParams Params;
-    const Params *params() const
-    {
-        return reinterpret_cast<const Params *>(_params);
-    }
-    SimpleEnergySM(const Params *p);
-    virtual ~SimpleEnergySM() {}
-    virtual void init();
+	typedef SimpleEnergySMParams Params;
+	const Params *params() const
+	{
+		return reinterpret_cast<const Params *>(_params);
+	}
+	SimpleEnergySM(const Params *p);
+	virtual ~SimpleEnergySM() {}
+	virtual void init();
+	virtual void update(double _energy);
 
-    virtual void update(double _energy);
+	// The states defined by energy managing algorithm
+	enum State {
+		STATE_POWER_OFF = 0,
+		STATE_POWER_ON = 1
+	};
 
-    enum State {
-        STATE_INIT = 0,
-        STATE_POWEROFF = 1,
-        STATE_POWERON = 2
-    };
-
-    enum MsgType {
-        CONSUMEENERGY = 0,
-        POWEROFF = 1,
-        POWERON = 2
-    };
+	// Messages
+	enum MsgType {
+		CONSUME_ENERGY = 0,
+		POWER_OFF = 1,
+		POWER_ON = 2
+	};
 
 protected:
-    State state;
-
+	State state;
+	double thres_1_to_off;
+	double thres_off_to_1; 
 };
 
 #endif //GEM5_STATE_MACHINE_HH

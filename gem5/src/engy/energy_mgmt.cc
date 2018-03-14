@@ -4,22 +4,18 @@
 #include <fstream>
 #include <math.h>
 #include <string.h>
+#include "sim/eventq.hh"
 #include "engy/energy_mgmt.hh"
 #include "engy/state_machine.hh"
-#include "engy/harvest.hh"
+#include "engy/energy_harvester.hh"
 #include "debug/EnergyMgmt.hh"
 #include "debug/VirtualDevice.hh"
-#include "sim/eventq.hh"
-#include "engy/DFS_LRY.hh"
 
-//Õâ¸öÈ«¾Ö±äÁ¿ÓÃÓÚÍ¨Öªenergy_mgmtÏÖÔÚÏµÍ³µÄ×´Ì¬
-//²»ÖªµÀÎªÉ¶energy_mgmtÊÕ²»µ½msg£¬ËùÒÔÖ»ÄÜ½«¾ÍÕâÃ´¸ãÁË
-//Õâ¸ö±äÁ¿µÄ±¾ÌåÊÇÔÚDFS_LRY.ccÖÐ¶¨ÒåµÄ
 extern bool DFS_LRY_poweron_dirty_patch;
 
 EnergyMgmt::EnergyMgmt(const Params *p)
         : SimObject(p),
-        	energy_consumed_per_harvest(p->energy_consumed_per_harvest),
+        	system_leakage(p->system_leakage),
         	energy_profile_mult(p->energy_profile_mult),
           time_unit(p->energy_time_unit),
           energy_remained(0),
@@ -33,10 +29,7 @@ EnergyMgmt::EnergyMgmt(const Params *p)
     msg_togo.resize(0);
 }
 
-EnergyMgmt::~EnergyMgmt()
-{
-
-}
+EnergyMgmt::~EnergyMgmt() {}
 
 void EnergyMgmt::init()
 {
@@ -54,17 +47,16 @@ void EnergyMgmt::init()
             _path_energy_profile.c_str(), time_unit);
     DPRINTF(EnergyMgmt, "[EngyMgmt] The capacity is %lf.\n", capacity);
 
-    /* Trigger first energy harvest event here */
+    /* Start to harvest energy */
     energyHarvest();
 }
 
-int EnergyMgmt::consumeEnergy(char *sender, double val)
+// Handling the energy consumption as well as energy harvesting
+int 
+EnergyMgmt::consumeEnergy(char *sender, double val)
 {
-    /* Todo: Pass the module which consumed the energy to this function. (Or DPRINTF in the module which consumes energy) */
     /* Consume energy if val > 0, and harvest energy if val < 0 */
-    // Edit by wtd on 11/13/17: Add the upper/lower bound of capacity: capacity, [cap_volt_lower_bound, cap_volt_lower_bound]
     double cons_unit, harv_unit;
-    //double cap_volt_lower_bound = 0;
     double cap_volt_upper_bound = 5;
     double lower_bound = state_machine->energy_consume_lower_bound; // nJ
     double upper_bound = 0.5 * capacity * pow(cap_volt_upper_bound, 2) * pow(10, 3); // nJ
@@ -82,17 +74,18 @@ int EnergyMgmt::consumeEnergy(char *sender, double val)
             DPRINTF(EnergyMgmt, "Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
     } 
 
-    // Energy Harvesting, if val > 0
+    // Energy Harvesting, if val < 0
     else {
+        // Todo: remove the leakage to consumptions.
         // energy leakage!
         if (DFS_LRY_poweron_dirty_patch)
         {
-            energy_remained -= energy_consumed_per_harvest;
-            //DPRINTF(EnergyMgmt, "[EngyMgmt] Leakage energy is %lf. Energy remained: %lf\n", energy_consumed_per_harvest, energy_remained);
+            energy_remained -= system_leakage;
+            //DPRINTF(EnergyMgmt, "[EngyMgmt] Leakage energy is %lf. Energy remained: %lf\n", system_leakage, energy_remained);
         }
 
         // energy harvesting        
-        val *= energy_profile_mult;
+        val *= energy_profile_mult; // adjust the supply
         harv_unit = -val;
         energy_remained = harvest_module->energy_harvest(-val, energy_remained);
 
@@ -114,7 +107,9 @@ int EnergyMgmt::consumeEnergy(char *sender, double val)
     return 1;
 }
 
-void EnergyMgmt::broadcastMsg()
+// Broadcasr energy messages via master energy port
+void 
+EnergyMgmt::broadcastMsg()
 {
     /* Broadcast the first message in the msg queue. */
     _meport.broadcastMsg(msg_togo[0]);
@@ -125,6 +120,7 @@ void EnergyMgmt::broadcastMsg()
         schedule(event_msg, curTick());
 }
 
+// Todo: find out the usage of this function
 int EnergyMgmt::broadcastMsgAsEvent(const EnergyMsg &msg)
 {
     msg_togo.push_back(msg);
@@ -134,17 +130,22 @@ int EnergyMgmt::broadcastMsgAsEvent(const EnergyMsg &msg)
     return 1;
 }
 
-int EnergyMgmt::handleMsg(const EnergyMsg &msg)
+// The energy manager is not only the message sender but also a receiver. All the messages processed here. The energy manager handles the energy consuming/harvesting events, while for other messages, this function will make a statement of the messages.
+int 
+EnergyMgmt::handleMsg(const EnergyMsg &msg)
 {
-    /**REMOVE**/
-    if (msg.type != 0) // msg.type = 0 means consume.
-        DPRINTF(EnergyMgmt, " handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
-    /* msg type should be 0 here, for 0 represents energy consuming, */
-    /* and EnergyMgmt module can only handle energy consuming msg*/
-    if (msg.type != DFS_LRY::MsgType::CONSUMEENERGY)
-        return 0;
+    // Statement of the current message (except consumes)
+    if (msg.type != CONSUME_ENERGY)
+    {
+        DPRINTF(EnergyMgmt, "HandleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+    }
 
-    return consumeEnergy(msg.sender, msg.val);
+    else if (msg.type == CONSUME_ENERGY)
+    {
+        return consumeEnergy(msg.sender, msg.val);
+    }
+
+    return 0;
 }
 
 std::vector<double> EnergyMgmt::readEnergyProfile()
@@ -168,9 +169,11 @@ std::vector<double> EnergyMgmt::readEnergyProfile()
     return data;
 }
 
-void EnergyMgmt::energyHarvest()
+// Energy harvest function provides an harvest event, where an Energy_Consume_Msg with negative value is generated. One by one, this event will trigger the next harvest event.
+void 
+EnergyMgmt::energyHarvest()
 {
-    /* Add harvested energy into capacity. */
+    // read the energy supply data from the energy profile
     if (energy_harvest_data.empty())
         return;
 
