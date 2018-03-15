@@ -5,8 +5,8 @@ import sys
 cap = float(sys.argv[1])
 profilemult = float(sys.argv[2])
 print "cap: %f; energy: %f.\n" %(cap, profilemult)
-#cap = 10   # uF
-#engy_supply_para = 10
+#cap = 10 		# uF
+#profilemult = 10	# times
 
 system = System()
 system.clk_domain = SrcClockDomain()
@@ -19,7 +19,6 @@ system.mem_ranges = [AddrRange('512MB')]
 system.has_vdev = 1
 system.vdev_ranges = [AddrRange('512MB', '512MB'), AddrRange('513MB', '513MB'), AddrRange('514MB', '514MB')]
 system.vaddr_vdev_ranges = [AddrRange('1000MB', '1000MB'), AddrRange('1001MB', '1001MB'), AddrRange('1002MB', '1002MB')]
-###
 
 #energy mgmt
 system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/solar_new2.txt', energy_time_unit = '10us')
@@ -27,47 +26,51 @@ system.energy_mgmt.state_machine = SimpleEnergySM()
 system.energy_mgmt.state_machine.thres_1_to_off = 0.5 * cap * 1000 * 1.1 * 1.1
 system.energy_mgmt.state_machine.thres_off_to_1 = 0.5 * cap * 1000 * 4.5 *4.5
 
-
 print "Full cap: %f.\n" %(0.5 * cap * 1000 * 5 * 5)
 print "thres_1_to_off: %f.\n" %(system.energy_mgmt.state_machine.thres_1_to_off)
 print "thres_off_to_1: %f.\n" %(system.energy_mgmt.state_machine.thres_off_to_1)
 
-system.energy_mgmt.capacity = cap;	#uF
-system.energy_mgmt.system_leakage = 0.02;  # leakage
-system.energy_mgmt.energy_profile_mult = profilemult; 
-###
+system.energy_mgmt.capacity = cap;				# uF
+system.energy_mgmt.system_leakage = 0.2;  			# leakage
+system.energy_mgmt.energy_profile_mult = profilemult; 	# adjust the energy
 
-#set some parameters for the CPU
+# CPU: basic params
 system.cpu = AtomicSimpleCPU(
-                            power_cpu = 1.3,    # nJ/cycle
-                             cycle_backup = 5,
-                             cycle_restore = 3,
-                             )
+			power_cpu = 1.3, 	# nJ/cycle
+			cycle_backup = 5, 	# nJ/cycle
+			cycle_restore = 3 	# nJ/cycle
+		)
 
+# CPU: slave port
 system.cpu.s_energy_port = system.energy_mgmt.m_energy_port
 
+# CPU: memory
 system.membus = SystemXBar()
-
 system.cpu.icache_port = system.membus.slave
 system.cpu.dcache_port = system.membus.slave
-
 system.cpu.createInterruptController()
-
 system.mem_ctrl = DDR3_1600_x64()
 system.mem_ctrl.range = system.mem_ranges[0]
 system.mem_ctrl.port = system.membus.master
-
 system.system_port = system.membus.slave
 
+# Virtual device #1
 system.vdev1 = VirtualDevice()
 system.vdev1.id = 1;
 system.vdev1.cpu = system.cpu
+# Access address range for the device
 system.vdev1.range = system.vdev_ranges[0]
-system.vdev1.energy_consumed_per_cycle_vdev = [Float(0), Float(0.03), Float(1.35)] # The energy consumption of each cycle at power-off, idle and active mode.
+# The energy consumption of each cycle at power-off, idle and active mode.
+system.vdev1.energy_consumed_per_cycle_vdev = [Float(0), Float(0.03), Float(1.35)] 
+# Delay of an active task
 system.vdev1.delay_self = '1ms'
+# Delay of the task returning interrupt
 system.vdev1.delay_cpu_interrupt = '100us'
+# Initialization delay
 system.vdev1.delay_set = '2200us'
+# Recovering delay :: ToRemove
 system.vdev1.delay_recover = '920us'
+# the device is volatile (is_interruptable = 0)
 system.vdev1.is_interruptable = 0
 system.vdev1.port = system.membus.master
 system.vdev1.s_energy_port = system.energy_mgmt.m_energy_port
