@@ -41,6 +41,7 @@
  * Authors: Steve Reinhardt
  */
 
+#include <string.h>
 #include "arch/locked_mem.hh"
 #include "arch/mmapped_ipr.hh"
 #include "arch/utility.hh"
@@ -61,9 +62,10 @@
 #include "sim/faults.hh"
 #include "sim/system.hh"
 #include "sim/full_system.hh"
-//#include "engy/state_machine.hh"
-//#include "engy/two_thres.hh"
+#include "engy/state_machine.hh"
+#include "engy/two_thres.hh"
 #include "engy/DVFS.hh"
+#include "engy/DFS_LRY.hh"
 
 using namespace std;
 using namespace TheISA;
@@ -72,7 +74,6 @@ AtomicSimpleCPU::TickEvent::TickEvent(AtomicSimpleCPU *c)
     : Event(CPU_Tick_Pri), cpu(c)
 {
 }
-
 
 void
 AtomicSimpleCPU::TickEvent::process()
@@ -110,7 +111,24 @@ AtomicSimpleCPU::init()
 }
 
 AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
-    : BaseSimpleCPU(p), tickEvent(this), width(p->width), locked(false),
+    : BaseSimpleCPU(p),
+    	
+    	power_cpu_5(p->power_cpu_5),
+      power_cpu_4(p->power_cpu_4),
+      power_cpu_3(p->power_cpu_3),
+      power_cpu_2(p->power_cpu_2),
+      power_cpu_1(p->power_cpu_1),
+	  
+      power_cpu(p->power_cpu),  
+      cycle_restore(p->cycle_restore),
+	  
+      clock_mult_5(p->clock_mult_5),
+      clock_mult_4(p->clock_mult_4),
+      clock_mult_3(p->clock_mult_3),
+      clock_mult_2(p->clock_mult_2),
+      clock_mult_1(p->clock_mult_1),
+      
+    	tickEvent(this), width(p->width), locked(false),
       simulate_data_stalls(p->simulate_data_stalls),
       simulate_inst_stalls(p->simulate_inst_stalls),
       drain_manager(NULL),
@@ -118,11 +136,12 @@ AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
       dcachePort(name() + ".dcache_port", this),
       fastmem(p->fastmem), dcache_access(false), dcache_latency(0),
       vdev_set(false), vdev_set_latency(0),
-      ppCommit(nullptr), energy_consumed_per_cycle(1),
+      ppCommit(nullptr), power_cpu(0),
       in_interrupt(0)
 {
+    strcpy(dev_name, "AtomicCPU");
     _status = Idle;
-    lat_poweron = 0;
+    tick_remain = 0;
 }
 
 
@@ -632,7 +651,7 @@ AtomicSimpleCPU::tick()
     if (latency < clockPeriod())
         latency = clockPeriod();
 
-    consumeEnergy(energy_consumed_per_cycle * ticksToCycles(latency));
+    consumeEnergy(dev_name, power_cpu * ticksToCycles(latency));
 
     if (_status != Idle)
         schedule(tickEvent, curTick() + latency);
@@ -653,9 +672,9 @@ AtomicSimpleCPU::printAddr(Addr a)
     dcachePort.printAddr(a);
 }
 
-/*
+
 // two-threshold handler
-int
+/*int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 {
     int rlt = 1;
@@ -665,14 +684,14 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
         case (int) TwoThresSM::MsgType::POWEROFF:
             lat = tickEvent.when() - curTick();
             if (in_interrupt)
-                lat_poweron = lat + clockPeriod() - lat % clockPeriod();
+                tick_remain = lat + clockPeriod() - lat % clockPeriod();
             else
-                lat_poweron = 0;
+                tick_remain = 0;
             deschedule(tickEvent);
             break;
         case (int) TwoThresSM::MsgType::POWERON:
-            consumeEnergy(energy_consumed_per_cycle * ticksToCycles(lat_poweron + BaseCPU::getTotalLat()));
-            schedule(tickEvent, curTick() + lat_poweron + BaseCPU::getTotalLat());
+            consumeEnergy(power_cpu * ticksToCycles(tick_remain + BaseCPU::getTotalLat()));
+            schedule(tickEvent, curTick() + tick_remain + BaseCPU::getTotalLat());
             break;
         default:
             rlt = 0;
@@ -680,47 +699,172 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
     return rlt;
 }*/
 
+int
+AtomicSimpleCPU::handleMsg(const EnergyMsg &msg) {
+    return 0;
+}
 
+/*
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 {
     int rlt = 1;
     Tick lat = 0;
-    const int CPU_Power = 0.160;
+    //const int CPU_Power = 0.160;
 
     DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DVFS] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
     switch(msg.type){
         case (int) DVFSSM::MsgType::POWEROFF:
             lat = tickEvent.when() - curTick();
             if (in_interrupt)
-                lat_poweron = lat + clockPeriod() - lat % clockPeriod();
+                tick_remain = lat + clockPeriod() - lat % clockPeriod();
             else
-                lat_poweron = 0;
+                tick_remain = 0;
             deschedule(tickEvent);
             break;
         case (int) DVFSSM::MsgType::DVFS_LOW:
-            energy_consumed_per_cycle *= 0.25;//DVFSSM::rateLow^2 * CPU_Power * 1;
+            power_cpu *= 0.25;//DVFSSM::rateLow^2 * CPU_Power * 1;
             // frequency
-            consumeEnergy(energy_consumed_per_cycle * ticksToCycles(0 + BaseCPU::getTotalLat()));
+            consumeEnergy(power_cpu * ticksToCycles(0 + BaseCPU::getTotalLat()));
             schedule(tickEvent, curTick() + 0 + BaseCPU::getTotalLat());
             break;
         case (int) DVFSSM::MsgType::DVFS_MIDDLE:
-            energy_consumed_per_cycle *= 1;//DVFSSM::rateMid^2 * CPU_Power * 1;
+            power_cpu *= 1;//DVFSSM::rateMid^2 * CPU_Power * 1;
             // frequency
-            //consumeEnergy(energy_consumed_per_cycle * ticksToCycles(lat_poweron + BaseCPU::getTotalLat()));
-            //schedule(tickEvent, curTick() + lat_poweron + BaseCPU::getTotalLat());
+            //consumeEnergy(power_cpu * ticksToCycles(tick_remain + BaseCPU::getTotalLat()));
+            //schedule(tickEvent, curTick() + tick_remain + BaseCPU::getTotalLat());
             break;
         case (int) DVFSSM::MsgType::DVFS_HIGH:
-            energy_consumed_per_cycle *= 2.25;//DVFSSM::rateHigh^2 * CPU_Power * 1;
+            power_cpu *= 2.25;//DVFSSM::rateHigh^2 * CPU_Power * 1;
             // frequency
-            //consumeEnergy(energy_consumed_per_cycle * ticksToCycles(lat_poweron + BaseCPU::getTotalLat()));
-            //schedule(tickEvent, curTick() + lat_poweron + BaseCPU::getTotalLat());
+            //consumeEnergy(power_cpu * ticksToCycles(tick_remain + BaseCPU::getTotalLat()));
+            //schedule(tickEvent, curTick() + tick_remain + BaseCPU::getTotalLat());
             break;
         default:
             rlt = 0;
     }
     return rlt;
 }
+*/
+
+/*
+//Msg handle for DFS_LRY
+int
+AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
+{
+	  int rlt = 1;
+    Tick lat = 0;
+    //const int CPU_Power = 0.160;
+
+    DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+    switch(msg.type){
+    		case (int) DFS_LRY::MsgType::RETENTION_BEG:
+    				//进入RETENTION状态，事实上要做的就是POWEROFF要做的事。
+    				//因为RETENTION和POWEROFF最大的区别只是开机没惩罚而已。
+    				lat = tickEvent.when() - curTick();           
+            tick_remain = lat + clockPeriod() - lat % clockPeriod();
+            deschedule(tickEvent);
+    				break;
+    				
+        case (int) DFS_LRY::MsgType::POWEROFF:
+        		//关机
+        		//该做的事实际上大部分在进入RETENTION时已经做了
+        		
+        		//仅有的一次例外是整个simulate刚开始时，会经历一次poweroff，这次是不会先retention的
+        		if(tickEvent.scheduled())
+						{
+							DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] handleMsg called at %lu, msg.type=%d. This is the initialization poweroff.\n", curTick(), msg.type);
+							lat = tickEvent.when() - curTick();           
+            	tick_remain = lat + clockPeriod() - lat % clockPeriod();
+            	deschedule(tickEvent);
+						} 
+						       		
+        		if (!in_interrupt)
+        		{
+        			tick_remain = 0;
+        		}        			
+            break;
+            
+        case (int) DFS_LRY::MsgType::RETENTION_END:
+    				//从RETENTION状态恢复工作，进入Freq Lv1
+    				//但是和POWERON不同的是没有额外的开机惩罚
+    				//调整频率
+            clkmult = clock_mult_1;
+        	  //调整耗能
+            power_cpu = power_cpu_1;
+            //开机
+            schedule(tickEvent, curTick() + tick_remain);                      
+    				break;  
+    				  
+        case (int) DFS_LRY::MsgType::POWERON:
+        	  //开机，进入Freq Lv1
+        	  //调整频率
+            clkmult = clock_mult_1;
+        	  //调整耗能
+            power_cpu = power_cpu_1;
+            //开机惩罚耗能
+            consumeEnergy(
+                dev_name,
+                power_cpu + power_cpu * ticksToCycles(
+                tick_remain + BaseCPU::getTotalLat()
+              )
+            );
+            //开机惩罚延时
+            schedule(tickEvent, 
+              curTick() + 
+              tick_remain + 
+              BaseCPU::getTotalLat() + 
+              clockPeriod() * cycle_restore
+            );                      
+            break;
+            
+        case (int) DFS_LRY::MsgType::FREQ2to1:
+        	  //进入能耗等级：1
+        	  //调整频率
+            clkmult = clock_mult_1;
+        	  //调整耗能
+            power_cpu = power_cpu_1;             
+            break; 
+ 
+        case (int) DFS_LRY::MsgType::FREQ1to2:
+        case (int) DFS_LRY::MsgType::FREQ3to2:
+        	  //进入能耗等级：2
+        	  //调整频率
+            clkmult = clock_mult_2;
+        	  //调整耗能
+            power_cpu = power_cpu_2;             
+            break;
+         
+        case (int) DFS_LRY::MsgType::FREQ2to3:   
+        case (int) DFS_LRY::MsgType::FREQ4to3:
+        	  //进入能耗等级：3
+        	  //调整频率
+            clkmult = clock_mult_3;
+        	  //调整耗能
+            power_cpu = power_cpu_3;             
+            break;
+            
+        case (int) DFS_LRY::MsgType::FREQ3to4:
+        case (int) DFS_LRY::MsgType::FREQ5to4:
+        	  //进入能耗等级：4
+        	  //调整频率
+            clkmult = clock_mult_4;
+        	  //调整耗能
+            power_cpu = power_cpu_4;             
+            break;
+            
+        case (int) DFS_LRY::MsgType::FREQ4to5:
+        	  //进入能耗等级：5
+        	  //调整频率
+            clkmult = clock_mult_5;
+        	  //调整耗能
+            power_cpu = power_cpu_5;             
+            break;                                    
+        default:
+            rlt = 0;
+    }
+    return rlt;
+}*/
 
 int
 AtomicSimpleCPU::virtualDeviceDelay(Tick tick)
@@ -738,6 +882,7 @@ int
 AtomicSimpleCPU::virtualDeviceInterrupt(Tick tick)
 {
     in_interrupt = 1;
+    DPRINTF(VirtualDevice, "AtomicCPU virtualDeviceInterrupt vdev_int_latency = %#lu\n", tick);
     return virtualDeviceDelay(tick);
 }
 

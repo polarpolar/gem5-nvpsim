@@ -63,22 +63,10 @@ class AtomicSimpleCPU(BaseSimpleCPU):
     simulate_inst_stalls = Param.Bool(False, "Simulate icache stall cycles")
     
     fastmem = Param.Bool(False, "Access memory directly")
-
-
-    energy_consumed_per_cycle_5 = Param.Float(2.25, "Energy consumed per cycle in Freq Level 5")
-    energy_consumed_per_cycle_4 = Param.Float(1.5, "Energy consumed per cycle in Freq Level 4")
-    energy_consumed_per_cycle_3 = Param.Float(1, "Energy consumed per cycle in Freq Level 3")
-    energy_consumed_per_cycle_2 = Param.Float(0.5, "Energy consumed per cycle in Freq Level 2")
-    energy_consumed_per_cycle_1 = Param.Float(0.25, "Energy consumed per cycle in Freq Level 1")
 		
-    energy_consumed_poweron = Param.Float(1, "Energy consumed when the system powers on again")
-    clockPeriod_to_poweron = Param.Int(1, "Cycles it takes for powering on the system again")
-    
-    clock_mult_5 = Param.Float(1/2.25, "Clock period multiplier in Freq Level 5")
-    clock_mult_4 = Param.Float(1/1.5, "Clock period multiplier in Freq Level 4")
-    clock_mult_3 = Param.Float(1, "Clock period multiplier in Freq Level 3")
-    clock_mult_2 = Param.Float(1/0.5, "Clock period multiplier in Freq Level 2")
-    clock_mult_1 = Param.Float(1/0.25, "Clock period multiplier in Freq Level 1")
+    power_cpu = Param.Float(1, "Energy consumption per cycle of CPU")
+    cycle_backup =Param.Int(1, "Cycles for CPU backup") 
+    cycle_restore = Param.Int(1, "Cycles for CPU restore")
                 		
     def addSimPointProbe(self, interval):
         simpoint = SimPoint()

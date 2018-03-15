@@ -744,6 +744,8 @@ BaseCPU::traceFunctionsInternal(Addr pc)
     }
 }
 
+// Register the vdev recover time for cpu.
+//      This model assumes the recovery of vdev occupies the timeliness of CPU.
 int
 BaseCPU::registerVDev(Tick tick, uint32_t &id)
 {
@@ -753,6 +755,8 @@ BaseCPU::registerVDev(Tick tick, uint32_t &id)
     return 1;
 }
 
+// Get the total recover time of all the vdev-s.
+//      This model assumes the recovery of vdev occupies the timeliness of CPU.
 Tick
 BaseCPU::getTotalLat()
 {
@@ -766,6 +770,10 @@ BaseCPU::getTotalLat()
     }
     return total;
 }
+
+void
+BaseCPU::virtualDeviceInterrupt(char* vdev_name, Tick delay_cpu_interrupt)
+{}
 
 int
 BaseCPU::virtualDeviceStart(uint32_t id)

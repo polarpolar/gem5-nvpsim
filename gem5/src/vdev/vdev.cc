@@ -96,7 +96,7 @@ VirtualDevice::VirtualDevice(const Params *p) :
 	delay_cpu_interrupt(p->delay_cpu_interrupt),
 	is_interruptable(p->is_interruptable),
 	delay_remained(p->delay_remained + p->delay_recover),
-	vdev_energy_state(VdevEngyState::POWER_OFF),
+	vdev_energy_state(VdevEngyState::STATE_POWER_OFF),
 	event_interrupt(this, false, Event::Virtual_Interrupt)
 {
 	sprintf(dev_name, "VDEV-%d", id);
@@ -120,9 +120,7 @@ VirtualDevice::~VirtualDevice()
 void
 VirtualDevice::init()
 {
-	// Todo: confirm that MemObj does not need init()
-	//MemObject::init();
-
+	// Memory port
 	if (port.isConnected()) {
 		port.sendRangeChange();
 	}
@@ -130,11 +128,12 @@ VirtualDevice::init()
 	cpu->registerVDev(delay_recover, id);
 	DPRINTF(VirtualDevice, "VDEV(%d) name: %s, range: %#lx - %#lx.\n", id, dev_name, range.start(), range.end());
 
-	vdev_energy_state = VdevEngyState::POWER_OFF;
+	vdev_energy_state = VdevEngyState::STATE_POWER_OFF;
 	if (!tickEvent.scheduled())
 		schedule(tickEvent, clockEdge(Cycles(0)));
 }
 
+// Called when the vdev complete an interrupt.
 void
 VirtualDevice::triggerInterrupt()
 {
@@ -143,20 +142,20 @@ VirtualDevice::triggerInterrupt()
 	/* Change register byte. */
 	*pmem |= VDEV_IDLE;
 	*pmem &= ~VDEV_BUSY;
-	vdev_energy_state = VdevEngyState::ACTIVE; // The virtual device enter/keep in the active status.
-	DPRINTF(VirtualDevice, "Virtual device triggers an interrupt.\n");
+	vdev_energy_state = VdevEngyState::STATE_NORMAL;
+	DPRINTF(VirtualDevice, "%s triggers an interrupt.\n", dev_name);
 	if (*pmem & VDEV_CHAOS) {
-		DPRINTF(VirtualDevice, "Virtual device already initialized.\n");
+		DPRINTF(VirtualDevice, "%s is already initialized.\n", dev_name);
 		*pmem |= VDEV_READY;
 		*pmem &= ~VDEV_CHAOS;
+		cpu->virtualDeviceInterrupt(dev_name, 0);
+		cpu->virtualDeviceEnd(id);
 	} else {
-		DPRINTF(VirtualDevice, "Virtual device task already completed.\n");	
+		DPRINTF(VirtualDevice, "%s completed the task.\n", dev_name);	
+		cpu->virtualDeviceInterrupt(dev_name, delay_cpu_interrupt);
+		cpu->virtualDeviceEnd(id);
 	}
-	finishSuccess();
-
-	/* Tell cpu. */
-	cpu->virtualDeviceInterrupt(delay_cpu_interrupt);
-	cpu->virtualDeviceEnd(id);
+	// finishSuccess();
 }
 
 // Todo: What is the correct peripheral model with four voltage steps?
@@ -181,7 +180,8 @@ VirtualDevice::access(PacketPtr pkt)
 					/* Request fails because the vdev is working. */
 					DPRINTF(VirtualDevice, "State BUSY! Request discarded!\n");
 				} else {
-					vdev_energy_state = VdevEngyState::ACTIVE; // the virtual device enter/keep in the active status to complete the initialization
+					// Vdev enters/keeps ACTIVE to complete the initialization
+					vdev_energy_state = VdevEngyState::STATE_NORMAL; 
 					
 					/* Set the virtual device to working mode */
 					*pmem |= VDEV_BUSY;
@@ -192,11 +192,9 @@ VirtualDevice::access(PacketPtr pkt)
 					DPRINTF(VirtualDevice, "Initialization, Need Ticks: %i, Cycles: %i, Energy: %lf. %s state: Init\n", 
 						delay_set, 
 						ticksToCycles(delay_set), 
-						energy_consumed_per_cycle_vdev[VdevEngyState::ACTIVE] * ticksToCycles(delay_set),
+						energy_consumed_per_cycle_vdev[VdevEngyState::STATE_NORMAL] * ticksToCycles(delay_set),
 						dev_name
 					);
-					cpu->virtualDeviceSet(delay_set);
-					cpu->virtualDeviceStart(id);
 				}
 			}
 			/* Activation. */
@@ -210,7 +208,7 @@ VirtualDevice::access(PacketPtr pkt)
 					DPRINTF(VirtualDevice, "State BUSY! Request discarded!\n");
 				} else {
 					/* Request succeeds. */
-					vdev_energy_state = VdevEngyState::ACTIVE; // The virtual device enter/keep in the active status.
+					vdev_energy_state = VdevEngyState::STATE_NORMAL; // The virtual device enter/keep in the active status.
 					
 					/* 统计设备访问次数 */
 					if (need_log)
@@ -231,10 +229,9 @@ VirtualDevice::access(PacketPtr pkt)
 					DPRINTF(VirtualDevice, "Start working. Need Ticks:%i, Cycles:%i, Energy: %lf, %s state: Active\n", 
 						delay_self, 
 						ticksToCycles(delay_self), 
-						energy_consumed_per_cycle_vdev[VdevEngyState::ACTIVE] * ticksToCycles(delay_self),
+						energy_consumed_per_cycle_vdev[VdevEngyState::STATE_NORMAL] * ticksToCycles(delay_self),
 						dev_name
 					);
-					cpu->virtualDeviceSet(delay_set);
 					cpu->virtualDeviceStart(id);
 				}
 			} else {
@@ -277,7 +274,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 	if (msg.type == SimpleEnergySM::MsgType::POWER_OFF) 
 	{
 		// Set energy state
-		vdev_energy_state = VdevEngyState::POWER_OFF;
+		vdev_energy_state = VdevEngyState::STATE_POWER_OFF;
 
 		// Reset vdev to be uninitialized.
 		*pmem |= VDEV_CHAOS;
@@ -290,7 +287,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 	else if (msg.type == SimpleEnergySM::MsgType::POWER_ON)
 	{
 		// Set energy state
-		vdev_energy_state = VdevEngyState::ACCESS;
+		vdev_energy_state = VdevEngyState::STATE_NORMAL;
 
 		// the functional states are not modified.
 	}

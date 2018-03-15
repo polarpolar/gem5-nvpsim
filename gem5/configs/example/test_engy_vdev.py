@@ -44,8 +44,9 @@ system.cpu = AtomicSimpleCPU(energy_consumed_per_cycle_5 = 1000000000000,
                              energy_consumed_per_cycle_2 = 5,
                              energy_consumed_per_cycle_1 = 0.1,
       
-                             energy_consumed_poweron = 50,  
-                             clockPeriod_to_poweron = 10,
+                             power_cpu = 50,    # 50nJ/cycle
+                             cycle_backup = 5,
+                             cycle_restore = 3,
       
                              clock_mult_5 = 1/1000000000000,
                              clock_mult_4 = 1/1000000000000,

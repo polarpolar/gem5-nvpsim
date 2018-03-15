@@ -123,10 +123,10 @@ public:
 	 	active 	 	: full power mode, can carry on all the operations
 	*/
 	enum VdevEngyState {
-		POWER_OFF 	= 0,
-		SLEEP 	= 1,
-		ACCESS 	= 2,
-		ACTIVE 	= 3
+		STATE_POWER_OFF 	= 0,
+		STATE_SLEEP 		= 1,
+		STATE_NORMAL 		= 2,
+		STATE_ACTIVE 		= 3
 	};
 
 	bool need_log;

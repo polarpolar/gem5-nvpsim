@@ -40,6 +40,11 @@
  * Authors: Steve Reinhardt
  */
 
+/*
+ * Modified by lf-z on 3/13/17.
+ * Update by tongda on 3/14/18.
+ */
+
 #ifndef __CPU_SIMPLE_ATOMIC_HH__
 #define __CPU_SIMPLE_ATOMIC_HH__
 
@@ -49,211 +54,175 @@
 
 class AtomicSimpleCPU : public BaseSimpleCPU
 {
-  public:
 
-    AtomicSimpleCPU(AtomicSimpleCPUParams *params);
-    virtual ~AtomicSimpleCPU();
+public:
+	AtomicSimpleCPU(AtomicSimpleCPUParams *params);
+	virtual ~AtomicSimpleCPU();
+	virtual void init();
+	
+	double power_cpu;   // nJ/cycle
+	double clkmult = 1;
 
-    virtual void init();
-    double energy_consumed_per_cycle_5;
-    double energy_consumed_per_cycle_4;
-    double energy_consumed_per_cycle_3;
-    double energy_consumed_per_cycle_2;
-    double energy_consumed_per_cycle_1;
-    double energy_consumed_poweron;  
+	/**
+	 * When power fails during a CPU task, the CPU should record the time of the remaining task, which is defined here as lat_remain.
+	 */
+	Tick tick_recover;
+	/* Backup/Restore time of CPU */
+	Tick cycle_backup;
+	Tick cycle_restore;
+	/* if the task is in interrupt */
+	bool in_interrupt;
 
-    int clockPeriod_to_poweron;
-    double clock_mult_5;
-    double clock_mult_4;
-    double clock_mult_3;
-    double clock_mult_2;
-    double clock_mult_1;
-    double clkmult = 1;
-    
-    inline Tick clockPeriod() const
-    {
-        return ClockedObject::clockPeriod() * clkmult;
-    }
-    inline Cycles ticksToCycles(Tick t) const
-    {
-        return ClockedObject::ticksToCycles(t / clkmult);
-    }
+	/* Energy message handler */
+	virtual int handleMsg(const EnergyMsg &msg);
 
-  private:
+	/* Virtual device related functions */
+	virtual void virtualDeviceInterrupt(char* vdev_name, Tick tick);
+	virtual void virtualDeviceRecover();
+	virtual int initVdevByCPU(int vdev_id);
 
-    char dev_name[100];
-    struct TickEvent : public Event
-    {
-        AtomicSimpleCPU *cpu;
+	/*** Memory related function definitions ***/
+	unsigned int drain(DrainManager *drain_manager);
+	void drainResume();
+	void switchOut();
+	void takeOverFrom(BaseCPU *oldCPU);
+	void verifyMemoryMode() const;
+	virtual void activateContext(ThreadID thread_num);
+	virtual void suspendContext(ThreadID thread_num);
+	Fault readMem(Addr addr, uint8_t *data, unsigned size, unsigned flags);
+	Fault writeMem(uint8_t *data, unsigned size, Addr addr, unsigned flags, uint64_t *res);
+	virtual void regProbePoints();
+	/* Print state of address in memory system via PrintReq (for debugging). */
+	void printAddr(Addr a);
+	
+	/*** Time related tools ***/
+	inline Tick clockPeriod() const
+	{
+		return ClockedObject::clockPeriod() * clkmult;
+	}
+	inline Cycles ticksToCycles(Tick t) const
+	{
+		return ClockedObject::ticksToCycles(t / clkmult);
+	}
 
-        TickEvent(AtomicSimpleCPU *c);
-        void process();
-        const char *description() const;
-    };
+protected:
 
-    TickEvent tickEvent;
+	/** Return a reference to the data port. */
+	virtual MasterPort &getDataPort() { return dcachePort; }
 
-    const int width;
-    bool locked;
-    const bool simulate_data_stalls;
-    const bool simulate_inst_stalls;
+	/** Return a reference to the instruction port. */
+	virtual MasterPort &getInstPort() { return icachePort; }
 
-    Tick lat_poweron;
+private:
+	char dev_name[100];
+	struct TickEvent : public Event
+	{
+		AtomicSimpleCPU *cpu;
+		TickEvent(AtomicSimpleCPU *c);
+		void process();
+		const char *description() const;
+	};
 
-    /**
-     * Drain manager to use when signaling drain completion
-     *
-     * This pointer is non-NULL when draining and NULL otherwise.
-     */
-    DrainManager *drain_manager;
+	TickEvent tickEvent;
 
-    // main simulation loop (one cycle)
-    void tick();
+	const int width;
+	bool locked;
+	const bool simulate_data_stalls;
+	const bool simulate_inst_stalls;
 
-    /**
-     * Check if a system is in a drained state.
-     *
-     * We need to drain if:
-     * <ul>
-     * <li>We are in the middle of a microcode sequence as some CPUs
-     *     (e.g., HW accelerated CPUs) can't be started in the middle
-     *     of a gem5 microcode sequence.
-     *
-     * <li>The CPU is in a LLSC region. This shouldn't normally happen
-     *     as these are executed atomically within a single tick()
-     *     call. The only way this can happen at the moment is if
-     *     there is an event in the PC event queue that affects the
-     *     CPU state while it is in an LLSC region.
-     *
-     * <li>Stay at PC is true.
-     * </ul>
-     */
-    bool isDrained() {
-        return microPC() == 0 &&
-            !locked &&
-            !stayAtPC;
-    }
+	/**
+	 * Drain manager to use when signaling drain completion
+	 *
+	 * This pointer is non-NULL when draining and NULL otherwise.
+	 */
+	DrainManager *drain_manager;
 
-    /**
-     * Try to complete a drain request.
-     *
-     * @returns true if the CPU is drained, false otherwise.
-     */
-    bool tryCompleteDrain();
+	// main simulation loop (one cycle)
+	void tick();
 
-    /**
-     * An AtomicCPUPort overrides the default behaviour of the
-     * recvAtomicSnoop and ignores the packet instead of panicking. It
-     * also provides an implementation for the purely virtual timing
-     * functions and panics on either of these.
-     */
-    class AtomicCPUPort : public MasterPort
-    {
+	/**
+	 * Check if a system is in a drained state.
+	 *
+	 * We need to drain if:
+	 * <ul>
+	 * <li>We are in the middle of a microcode sequence as some CPUs
+	 *	 (e.g., HW accelerated CPUs) can't be started in the middle
+	 *	 of a gem5 microcode sequence.
+	 *
+	 * <li>The CPU is in a LLSC region. This shouldn't normally happen
+	 *	 as these are executed atomically within a single tick()
+	 *	 call. The only way this can happen at the moment is if
+	 *	 there is an event in the PC event queue that affects the
+	 *	 CPU state while it is in an LLSC region.
+	 *
+	 * <li>Stay at PC is true.
+	 * </ul>
+	 */
+	bool isDrained() {
+		return microPC() == 0 &&
+			!locked &&
+			!stayAtPC;
+	}
 
-      public:
+	/**
+	 * Try to complete a drain request.
+	 *
+	 * @returns true if the CPU is drained, false otherwise.
+	 */
+	bool tryCompleteDrain();
 
-        AtomicCPUPort(const std::string &_name, BaseSimpleCPU* _cpu)
-            : MasterPort(_name, _cpu)
-        { }
+	/**
+	 * An AtomicCPUPort overrides the default behaviour of the
+	 * recvAtomicSnoop and ignores the packet instead of panicking. It
+	 * also provides an implementation for the purely virtual timing
+	 * functions and panics on either of these.
+	 */
+	class AtomicCPUPort : public MasterPort
+	{
+	public:
+		AtomicCPUPort(const std::string &_name, BaseSimpleCPU* _cpu) : MasterPort(_name, _cpu) { }
+	protected:
+		virtual Tick recvAtomicSnoop(PacketPtr pkt) { return 0; }
+		bool recvTimingResp(PacketPtr pkt)
+		{
+			panic("Atomic CPU doesn't expect recvTimingResp!\n");
+			return true;
+		}
+		void recvReqRetry()
+		{
+			panic("Atomic CPU doesn't expect recvRetry!\n");
+		}
+	};
 
-      protected:
-        virtual Tick recvAtomicSnoop(PacketPtr pkt) { return 0; }
+	class AtomicCPUDPort : public AtomicCPUPort
+	{
+	public:
+		AtomicCPUDPort(const std::string &_name, BaseSimpleCPU* _cpu) : AtomicCPUPort(_name, _cpu), cpu(_cpu)
+		{
+			cacheBlockMask = ~(cpu->cacheLineSize() - 1);
+		}
+		bool isSnooping() const { return true; }
+		Addr cacheBlockMask;
+	  protected:
+		BaseSimpleCPU *cpu;
+		virtual Tick recvAtomicSnoop(PacketPtr pkt);
+		virtual void recvFunctionalSnoop(PacketPtr pkt);
+	};
 
-        bool recvTimingResp(PacketPtr pkt)
-        {
-            panic("Atomic CPU doesn't expect recvTimingResp!\n");
-            return true;
-        }
+	AtomicCPUPort icachePort;
+	AtomicCPUDPort dcachePort;
 
-        void recvReqRetry()
-        {
-            panic("Atomic CPU doesn't expect recvRetry!\n");
-        }
+	bool fastmem;
+	Request ifetch_req;
+	Request data_read_req;
+	Request data_write_req;
 
-    };
+	bool dcache_access;
+	Tick dcache_latency;
 
-    class AtomicCPUDPort : public AtomicCPUPort
-    {
+	/** Probe Points. */
+	ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>> *ppCommit;
 
-      public:
-
-        AtomicCPUDPort(const std::string &_name, BaseSimpleCPU* _cpu)
-            : AtomicCPUPort(_name, _cpu), cpu(_cpu)
-        {
-            cacheBlockMask = ~(cpu->cacheLineSize() - 1);
-        }
-
-        bool isSnooping() const { return true; }
-
-        Addr cacheBlockMask;
-      protected:
-        BaseSimpleCPU *cpu;
-
-        virtual Tick recvAtomicSnoop(PacketPtr pkt);
-        virtual void recvFunctionalSnoop(PacketPtr pkt);
-    };
-
-
-    AtomicCPUPort icachePort;
-    AtomicCPUDPort dcachePort;
-
-    bool fastmem;
-    Request ifetch_req;
-    Request data_read_req;
-    Request data_write_req;
-
-    bool dcache_access;
-    Tick dcache_latency;
-
-    bool vdev_set;
-    Tick vdev_set_latency;
-
-    /** Probe Points. */
-    ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>> *ppCommit;
-
-  protected:
-
-    /** Return a reference to the data port. */
-    virtual MasterPort &getDataPort() { return dcachePort; }
-
-    /** Return a reference to the instruction port. */
-    virtual MasterPort &getInstPort() { return icachePort; }
-
-  public:
-
-    unsigned int drain(DrainManager *drain_manager);
-    void drainResume();
-
-    void switchOut();
-    void takeOverFrom(BaseCPU *oldCPU);
-
-    void verifyMemoryMode() const;
-
-    virtual void activateContext(ThreadID thread_num);
-    virtual void suspendContext(ThreadID thread_num);
-
-    Fault readMem(Addr addr, uint8_t *data, unsigned size, unsigned flags);
-
-    Fault writeMem(uint8_t *data, unsigned size,
-                   Addr addr, unsigned flags, uint64_t *res);
-
-    virtual void regProbePoints();
-
-    /**
-     * Print state of address in memory system via PrintReq (for
-     * debugging).
-     */
-    void printAddr(Addr a);
-
-    virtual int handleMsg(const EnergyMsg &msg);
-
-    virtual int virtualDeviceInterrupt(Tick tick);
-    virtual int virtualDeviceDelay(Tick tick);
-    virtual int virtualDeviceSet(Tick tick);
-
-    double energy_consumed_per_cycle;
-
-    bool in_interrupt;
 };
 
 #endif // __CPU_SIMPLE_ATOMIC_HH__

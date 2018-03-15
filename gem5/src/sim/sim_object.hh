@@ -181,15 +181,6 @@ class SimObject : public EventManager, public Serializable, public Drainable, pu
      */
     static void serializeAll(std::ostream &os);
 
-    /**
-     * Handle virtual interrupt and set time triggered by virtual device
-     */
-    virtual int virtualDeviceInterrupt(Tick tick) { return 1; }
-    virtual int virtualDeviceStart(uint32_t id) { return 1; }
-    virtual int virtualDeviceEnd(uint32_t id) { return 1; }
-    virtual int virtualDeviceDelay(Tick tick) { return 1; }
-    virtual int virtualDeviceSet(Tick tick) { return 1; }
-
 #ifdef DEBUG
   public:
     bool doDebugBreak;
