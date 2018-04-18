@@ -1,6 +1,6 @@
 Docker 使用教程
 
-1. 创建一个名为test的docker容器(共享文件夹配置)
+1. 创建一个名为test的docker容器 (共享文件夹配置)
 	> docker run -i -t --name=test ubuntu:xenial 
 	> docker run -i -t --name=test -v [path of shared folder in system]:[/root/share]  ubuntu:xenial
 	共享文件夹位于/root/share。

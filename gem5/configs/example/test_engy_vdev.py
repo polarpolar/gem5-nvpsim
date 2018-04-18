@@ -41,12 +41,13 @@ system.energy_mgmt.state_machine.thres_1_to_off = 0.5 * cap * 1000 * 1.1 * 1.1
 system.energy_mgmt.state_machine.thres_off_to_1 = 0.5 * cap * 1000 * 4.5 *4.5
 # Energy Storage and leakage design of the capacitor
 system.energy_mgmt.capacity = cap;				# uF
-system.energy_mgmt.system_leakage = 0.2;  			# leakage
+system.energy_mgmt.system_leakage = 0.2;			# leakage
 system.energy_mgmt.energy_profile_mult = profilemult; 	# adjust the energy
 
-print "Full cap: %f.\n" %(0.5 * cap * 1000 * 5 * 5)
-print "thres_1_to_off: %f.\n" %(system.energy_mgmt.state_machine.thres_1_to_off)
-print "thres_off_to_1: %f.\n" %(system.energy_mgmt.state_machine.thres_off_to_1)
+print "---- Full cap: %f." %(0.5 * cap * 1000 * 5 * 5)
+print "---- thres_1_to_off: %f." %(system.energy_mgmt.state_machine.thres_1_to_off)
+print "---- thres_off_to_1: %f." %(system.energy_mgmt.state_machine.thres_off_to_1)
+print "---- deltaE = %f.\n" %(0.5 * cap * 1000 * ( (system.energy_mgmt.state_machine.thres_1_to_off*system.energy_mgmt.state_machine.thres_1_to_off) - (system.energy_mgmt.state_machine.thres_off_to_1*system.energy_mgmt.state_machine.thres_off_to_1) ) )
 
 ###################################
 ##########	CPU 	###############
@@ -167,7 +168,7 @@ root = Root(full_system = False, system = system)
 m5.instantiate()
 
 print "Beginning simulation!"
-exit_event = m5.simulate(int(0.2 * 1000000000000))
+exit_event = m5.simulate(int(10 * 1000000000000))
 print 'Exiting @ tick %i because %s' % (m5.curTick(), exit_event.getCause())
 
 

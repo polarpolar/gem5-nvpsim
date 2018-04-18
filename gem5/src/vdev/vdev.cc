@@ -306,7 +306,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 		// a. ready but not busy: no task on working
 		if ( (*pmem & VDEV_READY) && !(*pmem & VDEV_BUSY) )
 		{
-			DPRINTF(VirtualDevice, "%s: Power-off, ready but not busy (idle).\n");
+			DPRINTF(VirtualDevice, "%s: Power-off, ready but not busy (idle).\n", dev_name);
 			// Ready but not executing tasks
 			need_recover = true;
 			// Not task needs to be restart
@@ -317,7 +317,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 		// b. not ready but busy: init task on working
 		else if	( !(*pmem & VDEV_READY) && (*pmem & VDEV_BUSY) )
 		{
-			DPRINTF(VirtualDevice, "%s: Power-off, not ready but busy (init-ing).\n");
+			DPRINTF(VirtualDevice, "%s: Power-off, not ready but busy (init-ing).\n", dev_name);
 			// Ready but not executing tasks
 			need_recover = true;
 			// Not task needs to be restart
@@ -329,7 +329,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
 		else if ( (*pmem & VDEV_READY) && (*pmem & VDEV_BUSY) )
 		{
 			assert(event_interrupt.scheduled());
-			DPRINTF(VirtualDevice, "%s: Power-off, ready and busy (working).\n");
+			DPRINTF(VirtualDevice, "%s: Power-off, ready and busy (working).\n", dev_name);
 
 			/* Calculate the remaining delay*/
 			if (!is_interruptable) {

@@ -660,15 +660,15 @@ AtomicSimpleCPU::printAddr(Addr a)
 /****** Virtual Device Related Functions *******/
 // Interrupt reaction for vdev
 void
-AtomicSimpleCPU::virtualDeviceInterrupt(char* vdev_name, Tick tick)
+AtomicSimpleCPU::virtualDeviceInterrupt(char* vdev_name, Tick delay_isa)
 {
 	//in_interrupt = 1;
-	DPRINTF(VirtualDevice, "[AtomicCPU] %s calls INT, latency = %#lu\n", vdev_name, tick);
+	DPRINTF(VirtualDevice, "[AtomicCPU] %s calls INT, latency = %#lu\n", vdev_name, delay_isa);
 
 	Tick time = tickEvent.when();
-	if (tick % clockPeriod())
-		tick += clockPeriod() - tick % clockPeriod();
-	time += tick;
+	if (delay_isa % clockPeriod())
+		delay_isa += clockPeriod() - delay_isa % clockPeriod();
+	time += delay_isa;
 	reschedule(tickEvent, time);
 }
 
