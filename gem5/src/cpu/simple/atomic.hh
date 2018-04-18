@@ -78,7 +78,7 @@ public:
 
 	/* Virtual device related functions */
 	virtual void virtualDeviceInterrupt(char* vdev_name, Tick tick);
-	virtual void virtualDeviceRecover();
+	virtual void virtualDeviceRecover(char* vdev_name, Tick delay_vdev_init);
 	virtual int initVdevByCPU(int vdev_id);
 
 	/*** Memory related function definitions ***/

@@ -70,12 +70,13 @@ EnergyMgmt::consumeEnergy(char *sender, double val)
             cons_unit -= (lower_bound - energy_remained);
             energy_remained = lower_bound;
         }
-        if (strcmp(sender, "VDEV-2")==0 && curTick()%10000 == 0)
-            DPRINTF(EnergyMgmt, "Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
+        if (strcmp(sender, "VDEV-2")==0 && curTick()%10000 == 0) {
+            //DPRINTF(EnergyMgmt, "Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
+        }
     } 
 
     // Energy Harvesting, if val < 0
-    else {
+    else if (val < 0) {
         // Todo: remove the leakage to consumptions.
         // energy leakage!
         if (DFS_LRY_poweron_dirty_patch)
@@ -98,7 +99,7 @@ EnergyMgmt::consumeEnergy(char *sender, double val)
         else if (energy_remained < lower_bound) {
             energy_remained = lower_bound;
         }
-        DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", harv_unit, energy_remained);
+        //DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", harv_unit, energy_remained);
     }
     
     // judge if energy_remained triggers state_machine changes
@@ -107,7 +108,7 @@ EnergyMgmt::consumeEnergy(char *sender, double val)
     return 1;
 }
 
-// Broadcasr energy messages via master energy port
+// Broadcast energy messages via master energy port
 void 
 EnergyMgmt::broadcastMsg()
 {

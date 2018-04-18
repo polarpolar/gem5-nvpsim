@@ -775,6 +775,10 @@ void
 BaseCPU::virtualDeviceInterrupt(char* vdev_name, Tick delay_cpu_interrupt)
 {}
 
+void 
+BaseCPU::virtualDeviceRecover(char* vdev_name, Tick delay_vdev_init)
+{}
+
 int
 BaseCPU::virtualDeviceStart(uint32_t id)
 {

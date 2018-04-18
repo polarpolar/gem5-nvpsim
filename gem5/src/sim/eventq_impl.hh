@@ -37,6 +37,7 @@
 
 #include "base/trace.hh"
 #include "sim/eventq.hh"
+#include "debug/VirtualDevice.hh"
 
 inline void
 EventQueue::schedule(Event *event, Tick when, bool global)

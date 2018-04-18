@@ -672,20 +672,23 @@ AtomicSimpleCPU::virtualDeviceInterrupt(char* vdev_name, Tick tick)
 	reschedule(tickEvent, time);
 }
 
-// The CPU triggered virtual device recovery
+// The CPU-triggered virtual device recovery
 void
-AtomicSimpleCPU::virtualDeviceRecover()
+AtomicSimpleCPU::virtualDeviceRecover(char* vdev_name, Tick delay_vdev_init)
 {
+	Tick time;
+
 	// Todo: recover the virtual devices one by one.
 	//	We need to extend an vdev initialization function for CPU
-	DPRINTF(VirtualDevice, "[AtomicCPU] Start to recover vdev-s.\n");
-	//Tick time;
+	DPRINTF(VirtualDevice, "[AtomicCPU] Wait for Peripheral.\n");
+
+	// CPU wait for all peripheral inits.
 	//for vdev in vdev-list
 	//{
 	//	initVdevByCPU(vdev_list(vdev_id));
-	//	time = tickEvent.when(); 
-	//	time += tick_init(vdev_id);
-	//	reschedule(tickEvent, time);
+		time = tickEvent.when(); 
+		time += delay_vdev_init;
+		reschedule(tickEvent, time);
 	//}
 }
 
@@ -724,7 +727,6 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 		tick_recover += cycle_restore*clockPeriod();
 		consumeEnergy(dev_name, power_cpu * cycle_restore);
 		// reschedule the next tickEvent
-		virtualDeviceRecover();
 		schedule(tickEvent, curTick() + tick_recover);
 		break;
 

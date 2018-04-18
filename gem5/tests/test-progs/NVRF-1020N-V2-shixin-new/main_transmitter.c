@@ -84,21 +84,10 @@ void main()
 				payload[6*i]=(uchar)((acc_z&0xFF00)>>8);
 				payload[6*i+1]=(uchar)(acc_z&0x00FF);
 		}
-		
-	//	drill_buffer();
-	//	DelayMS(100);
-	//	nvrf_start(PNum,0);
-	//	DelayMS(200);
-		
  		
 	//	tmpInit();           //initialization of tmp100 		
 	//	tmpSetRes(3);        //Set resolution of tmp100: 12bits
 	//	
-//		#ifdef LCD_display_temp
-//		LCD_show(0xEEEE);
-//		DelayMS(1000);
- //   	#endif
-		
 
 		tmpGetTmpCont(&tmp);
 		payload[0]=(uchar)((tmp&0xFF00)>>8);
@@ -111,8 +100,12 @@ void main()
 		fft_float (32,0,payload,ImagIn,RealOut,ImagOut);
 
 //4. encode
+
+//5. send messages
+		
+	//	drill_buffer();
+	//	DelayMS(100);
+	//	nvrf_start(PNum,0);
+	//	DelayMS(200);
 		send_message(ImagOut);
-
-
-
 }

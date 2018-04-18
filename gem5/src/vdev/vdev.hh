@@ -29,6 +29,9 @@ protected:
 	char dev_name[100];
 
 private:
+	/** Whether the state needs recover **/
+	bool need_recover;
+
 	/** Definitions of TickEvent in Virtual Device **/
 	/** The behavior is constructed in tick-level */
 	struct TickEvent : public Event
@@ -163,11 +166,13 @@ protected:
 	/** When power off, time is remained for the task */
 	Tick delay_remained;
 	/** Energy consumption in different modes : (*1000?)**/
-	double energy_consumed_per_cycle_vdev[3] = {0, 0.25, 1.75};
-	/** Energy modes of vdev : [OFF, SLEEP, ACTIVE]; **/
+	double energy_consumed_per_cycle_vdev[4] = {0, 0.01, 0.2, 2};
+	/** Energy modes of vdev : [OFF, SLEEP, NORMAL, ACTIVE]; **/
 	VdevEngyState vdev_energy_state;
 
+	/** The normal/re-init interrupt event scheduled by vdev **/
 	EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_interrupt;
+	EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_reinit;
 	/** Tell whether the task is successful */
 	virtual bool finishSuccess();
 	/** Implement of memories and registers for the vdev. */

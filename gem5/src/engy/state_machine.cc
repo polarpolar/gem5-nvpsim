@@ -45,11 +45,11 @@ void SimpleEnergySM::update(double _energy)
 	msg.val = 0;
 
 	// power failure
-	if (state == STATE_POWER_ON && _energy <= thres_off_to_1) 
+	if (state == STATE_POWER_ON && _energy <= thres_1_to_off) 
 	{
 		state = State::STATE_POWER_OFF;
 		msg.type = MsgType::POWER_OFF;
-		DPRINTF(EnergyMgmt, "[SimpleEnergySM] State change: POWER_ON->POWER_OFF, energy=%lf, thres=%lf.\n", _energy, thres_1_to_off);
+		DPRINTF(EnergyMgmt, "[SimpleEngySM] State change: POWER_ON->POWER_OFF, energy=%lf, thres=%lf.\n", _energy, thres_1_to_off);
 		broadcastMsg(msg);
 	} 
 
@@ -58,7 +58,7 @@ void SimpleEnergySM::update(double _energy)
 	{
 		state = State::STATE_POWER_ON;
 		msg.type = MsgType::POWER_ON;
-		DPRINTF(EnergyMgmt, "[SimpleEnergySM] State change: POWER_OFF->POWER_ON, energy=%lf, thres=%lf.\n", _energy, thres_off_to_1);
+		DPRINTF(EnergyMgmt, "[SimpleEngySM] State change: POWER_OFF->POWER_ON, energy=%lf, thres=%lf.\n", _energy, thres_off_to_1);
 		broadcastMsg(msg);
 	}
 }
