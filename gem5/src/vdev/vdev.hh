@@ -170,9 +170,9 @@ protected:
 	/** Energy modes of vdev : [OFF, SLEEP, NORMAL, ACTIVE]; **/
 	VdevEngyState vdev_energy_state;
 
-	/** The normal/re-init interrupt event scheduled by vdev **/
+	/** The normal/init interrupt event scheduled by vdev **/
 	EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_interrupt;
-	EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_reinit;
+	EventWrapper<VirtualDevice, &VirtualDevice::triggerInterrupt> event_init;
 	/** Tell whether the task is successful */
 	virtual bool finishSuccess();
 	/** Implement of memories and registers for the vdev. */

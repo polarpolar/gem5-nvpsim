@@ -639,6 +639,8 @@ AtomicSimpleCPU::tick()
 	// energy consumption of this tick
 	consumeEnergy(dev_name, power_cpu * ticksToCycles(latency));
 
+	//DPRINTF(VirtualDevice, "CPU-tick +1\n");
+
 	if (_status != Idle)
 		schedule(tickEvent, curTick() + latency);
 }
@@ -663,7 +665,7 @@ void
 AtomicSimpleCPU::virtualDeviceInterrupt(char* vdev_name, Tick delay_isa)
 {
 	//in_interrupt = 1;
-	DPRINTF(VirtualDevice, "[AtomicCPU] %s calls INT, latency = %#lu\n", vdev_name, delay_isa);
+	DPRINTF(VirtualDevice, "%s calls INT, latency = %#lu\n", vdev_name, delay_isa);
 
 	Tick time = tickEvent.when();
 	if (delay_isa % clockPeriod())
@@ -676,20 +678,17 @@ AtomicSimpleCPU::virtualDeviceInterrupt(char* vdev_name, Tick delay_isa)
 void
 AtomicSimpleCPU::virtualDeviceRecover(char* vdev_name, Tick delay_vdev_init)
 {
+	// Extension: user defined function for recovery.
 	Tick time;
 
 	// Todo: recover the virtual devices one by one.
 	//	We need to extend an vdev initialization function for CPU
-	DPRINTF(VirtualDevice, "[AtomicCPU] Wait for Peripheral.\n");
+	DPRINTF(VirtualDevice, "Wait for Peripheral.\n");
 
-	// CPU wait for all peripheral inits.
-	//for vdev in vdev-list
-	//{
-	//	initVdevByCPU(vdev_list(vdev_id));
-		time = tickEvent.when(); 
-		time += delay_vdev_init;
-		reschedule(tickEvent, time);
-	//}
+	// The recover_time is the maximum of the recovery of vdev-s.
+	time = tickEvent.when() - recover_time; 
+	time += recover_time >= delay_vdev_init ? recover_time : delay_vdev_init;
+	reschedule(tickEvent, time);
 }
 
 // Interface for CPU to initialize vdev.
@@ -706,7 +705,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 {
 	Tick tick_remain = 0;
 	tick_recover = 0;
-	DPRINTF(EnergyMgmt, "[AtomicNVP] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+	DPRINTF(EnergyMgmt, "[SimpleEnergySM] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
 
 	switch(msg.type)
 	{
@@ -718,7 +717,10 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 		// Uncomplete time of current task (uncompleted cycle should be re-executed)
 		tick_remain = tickEvent.when() - curTick();
 		tick_recover += tick_remain + (clockPeriod() - tick_remain % clockPeriod());
+		// recover_time recover to zero.
+		recover_time = 0;
 		// remove the next tickEvent until power on
+		assert(tickEvent.scheduled());
 		deschedule(tickEvent);
 		break;
 

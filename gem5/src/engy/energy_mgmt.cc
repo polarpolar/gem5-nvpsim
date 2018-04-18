@@ -70,9 +70,9 @@ EnergyMgmt::consumeEnergy(char *sender, double val)
             cons_unit -= (lower_bound - energy_remained);
             energy_remained = lower_bound;
         }
-        if (strcmp(sender, "VDEV-2")==0 && curTick()%10000 == 0) {
-            //DPRINTF(EnergyMgmt, "Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
-        }
+        //if (strcmp(sender, "VDEV-2")==0 && curTick()%10000 == 0) {
+            DPRINTF(EnergyMgmt, "Energy %lf is consumed by %s. Energy remained: %lf\n", cons_unit, sender, energy_remained);
+        //}
     } 
 
     // Energy Harvesting, if val < 0

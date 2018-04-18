@@ -63,6 +63,9 @@ public:
 	double power_cpu;   // nJ/cycle
 	double clkmult = 1;
 
+	// Add for parallel recovery of vdev-s. The recover time is the maximum recover time of vdev-s.
+	double recover_time = 0;
+
 	/**
 	 * When power fails during a CPU task, the CPU should record the time of the remaining task, which is defined here as lat_remain.
 	 */

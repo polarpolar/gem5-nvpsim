@@ -1,16 +1,22 @@
 import m5
 from m5.objects import *
 
+import os
+if os.path.exists("m5out/devicedata"):
+	os.remove("m5out/devicedata")
+
 import sys  
 cap = float(sys.argv[1])
 profilemult = float(sys.argv[2])
 print "cap: %f; energy: %f.\n" %(cap, profilemult)
+cap = cap * 0.25
+profilemult = profilemult * 0.02
 #cap = 10 		# uF
 #profilemult = 10	# times
 
 system = System()
 system.clk_domain = SrcClockDomain()
-system.clk_domain.clock = '1MHz'
+system.clk_domain.clock = '1MHz'				# clock period: 1us
 system.clk_domain.voltage_domain = VoltageDomain()
 system.mem_mode = 'atomic'
 system.mem_ranges = [AddrRange('512MB')]
@@ -33,7 +39,7 @@ system.vaddr_vdev_ranges = [AddrRange('1000MB', '1000MB'),
 ###################################
 
 # Power Supply (file path and sample period)
-system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/solar_new2.txt', energy_time_unit = '10us')
+system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/solar_new_60000.txt', energy_time_unit = '10us')
 # Energy Management Strategy: State Machine
 system.energy_mgmt.state_machine = SimpleEnergySM()
 # Threshold Design for the state machine
@@ -47,7 +53,7 @@ system.energy_mgmt.energy_profile_mult = profilemult; 	# adjust the energy
 print "---- Full cap: %f." %(0.5 * cap * 1000 * 5 * 5)
 print "---- thres_1_to_off: %f." %(system.energy_mgmt.state_machine.thres_1_to_off)
 print "---- thres_off_to_1: %f." %(system.energy_mgmt.state_machine.thres_off_to_1)
-print "---- deltaE = %f.\n" %(0.5 * cap * 1000 * ( (system.energy_mgmt.state_machine.thres_1_to_off*system.energy_mgmt.state_machine.thres_1_to_off) - (system.energy_mgmt.state_machine.thres_off_to_1*system.energy_mgmt.state_machine.thres_off_to_1) ) )
+print "---- deltaE = %f.\n" %(system.energy_mgmt.state_machine.thres_off_to_1 - system.energy_mgmt.state_machine.thres_1_to_off)
 
 ###################################
 ##########	CPU 	###############
@@ -168,8 +174,30 @@ root = Root(full_system = False, system = system)
 m5.instantiate()
 
 print "Beginning simulation!"
-exit_event = m5.simulate(int(10 * 1000000000000))
+exit_event = m5.simulate(int(599900000))
 print 'Exiting @ tick %i because %s' % (m5.curTick(), exit_event.getCause())
+
+
+
+###################################
+###########  Output File  ############
+###################################
+
+# The following codes are used to batch.
+
+if os.path.exists("m5out/devicedata"):
+	fi = open("m5out/devicedata","r")
+	line = fi.readline()
+	vdev_access = int(line)
+	fi.close()
+else:
+	vdev_access = 0
+
+fo = open("m5out/batch_res.csv","a")
+fo.write("%f,%f,%i,%i,%s\n" % (cap, profilemult, vdev_access, m5.curTick(), exit_event.getCause()))
+fo.close()
+
+print "%f,%f,%i,%i" % (cap, profilemult, vdev_access, m5.curTick())
 
 
 #fi = open("m5out/devicedata","r")

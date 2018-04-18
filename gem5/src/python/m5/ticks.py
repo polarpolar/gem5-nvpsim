@@ -29,7 +29,7 @@
 import sys
 from m5.util import warn
 
-tps = 1.0e12         # default to 1 THz (1 Tick == 1 ps)
+tps = 1.0e9         # default (1.0e12) to 1 THz (1 Tick == 1 ps)
 tps_fixed = False    # once set to true, can't be changed
 
 # fix the global frequency and tell C++ about it
