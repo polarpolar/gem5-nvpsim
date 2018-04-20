@@ -61,8 +61,8 @@ void SimpleEnergySM::update(double _energy)
 
 		// Calculate Power failure times
 		outage_times++;
-		std::ofstream fout;
-		fout.open("m5out/power_failure", std::ios::app);
+		std::ofstream fout("m5out/power_failure");
+		//fout.open("m5out/power_failure", std::ios::app);
 		assert(fout);
 		fout << outage_times << std::endl;
 		fout.close();

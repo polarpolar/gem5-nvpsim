@@ -40,4 +40,10 @@ rfTrans(uint8_t *cmd_reg, uint8_t *payload){
 	while(!(*cmd_reg & VDEV_FINISH));
 };
 
+void	
+generalVdevActive(uint8_t *cmd_reg){
+	*cmd_reg = VDEV_EXEC;
+	while(!(*cmd_reg & VDEV_FINISH));
+}
+
 

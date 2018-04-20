@@ -22,12 +22,12 @@
 static int VDEV_REG_NUM[8] = {
 	3,	// TMP_SENSOR
 	7,	// ACC_SENSOR
-	100,	// RF_SENSOR
-	3,
-	3,
-	3,
-	3,
-	3
+	100,	// RF_TRANS
+	7,	// General VdeV
+	7,	// General VdeV
+	7,	// General VdeV
+	7,	// General VdeV
+	7	// General VdeV
 };
 
 static void * PERI_ADDR[8] = {
@@ -48,6 +48,7 @@ void	periInit(uint8_t *cmd_reg);
 void	tmpSense(int *tmp, uint8_t *cmd_reg);
 void	accSense(int *x, int *y, int *z, uint8_t *cmd_reg);
 void	rfTrans(uint8_t *cmd_reg, uint8_t *payload);
+void	generalVdevActive(uint8_t *cmd_reg);
 
 
 
