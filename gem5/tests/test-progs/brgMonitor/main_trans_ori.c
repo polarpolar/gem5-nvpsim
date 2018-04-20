@@ -35,30 +35,31 @@ int main()
 
 	printf("Peripherals Registered.\n");
 
+//while(count < 1)
 while(count < 1)
 {
 	printf("Start Execution.\n"); 
 	for (j=0; j<PeriNum/2; j++)
 	{
 		// initialization of TMP Sensor
-		//periInit(tmp_reg);           // TMP sensor init
+		periInit(tmp_reg);           // TMP sensor init
 		printf("TMP Inited.\n"); 
 
 	
 		// data read from TMP Sensor
-		//tmpSense(&tmp, tmp_reg);
+		tmpSense(&tmp, tmp_reg);
 		collection[0]=(unsigned char)((tmp&0xFF00)>>8);
 		collection[1]=(unsigned char)(tmp&0x00FF);
 		printf("--Collecting the temperature data (%d).\n", tmp);
 	
 		// initialization of ACC Sensor
-		//periInit(acc_reg); 	
+		periInit(acc_reg); 	
 		printf("ACC Inited.\n");
 
 		// data read from ACC Sensor
 		for(i=1; i<=ANum; i++)
 		{
-			//accSense(&acc_x, &acc_y, &acc_z, acc_reg);
+			accSense(&acc_x, &acc_y, &acc_z, acc_reg);
 			collection[6*i-4]=(unsigned char)((acc_x&0xFF00)>>8);
 			collection[6*i-3]=(unsigned char)(acc_x&0x00FF);
 			collection[6*i-2]=(unsigned char)((acc_y&0xFF00)>>8);
@@ -78,8 +79,8 @@ while(count < 1)
 
 	
 	// transmit data from Zigbee
-	//periInit(rf_reg);		// Zigbee init
-	//rfTrans(rf_reg, payload);	// Zigbee transmit
+	periInit(rf_reg);		// Zigbee init
+	rfTrans(rf_reg, payload);	// Zigbee transmit
 	
 	printf("RF transmission completed.\n");
 	

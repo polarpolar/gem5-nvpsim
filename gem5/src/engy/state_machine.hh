@@ -61,6 +61,9 @@ public:
 		POWER_ON = 2
 	};
 
+
+	int outage_times = 0;
+
 protected:
 	State state;
 	double thres_1_to_off;

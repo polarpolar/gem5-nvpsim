@@ -1,8 +1,6 @@
 //
 // 	Source code file for Virtual Device
 // 
-//	Version NVRF	20/4/2018, tongda
-// 		Add
 //	Version 2.1.	12/3/2017, tongda
 //		Add new states considering initializations
 //		Add a retention -> power-off convertion in this part.
