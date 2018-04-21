@@ -60,7 +60,7 @@ public:
 	virtual ~AtomicSimpleCPU();
 	virtual void init();
 	
-	double power_cpu;   // nJ/cycle
+	double power_cpu[3] = {0, 0.3, 1.3};   // nJ/cycle
 	double clkmult = 1;
 
 	// Add for parallel recovery of vdev-s. The recover time is the maximum recover time of vdev-s.

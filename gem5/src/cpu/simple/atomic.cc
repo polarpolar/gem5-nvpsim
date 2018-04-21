@@ -116,7 +116,6 @@ AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
 	: BaseSimpleCPU(p),
 
 	// Added for recovery
-	power_cpu(p->power_cpu),
 	cycle_backup(p->cycle_backup),
 	cycle_restore(p->cycle_restore),
 
@@ -134,6 +133,11 @@ AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
 	_status = Idle;
 	tick_recover = 0;
 	in_interrupt = false;
+	
+	// the energy consumption of each cycle defines the cost of three modes (OFF, SLEEP, ACTIVE)
+	power_cpu[0] = p->power_cpu[0];
+	power_cpu[1] = p->power_cpu[1];
+	power_cpu[2] = p->power_cpu[2];
 }
 
 
@@ -637,7 +641,7 @@ AtomicSimpleCPU::tick()
 		latency = clockPeriod();
 
 	// energy consumption of this tick
-	consumeEnergy(dev_name, power_cpu * ticksToCycles(latency));
+	consumeEnergy(dev_name, power_cpu[2] * ticksToCycles(latency));
 
 	//DPRINTF(VirtualDevice, "CPU-tick +1\n");
 
@@ -700,6 +704,7 @@ AtomicSimpleCPU::initVdevByCPU(int vdev_id)
 }
 
 /****** Energy Message Handler *******/
+// Todo: add a new idle tick_event for CPU to represent the idle state.
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg) 
 {
@@ -713,7 +718,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 		// Todo: A more reasonable solution is to make up a backup/restore event.
 		// Backup procedure
 		tick_recover += cycle_backup*clockPeriod();
-		consumeEnergy(dev_name, power_cpu * cycle_backup);
+		consumeEnergy(dev_name, power_cpu[2] * cycle_backup);
 		// Uncomplete time of current task (uncompleted cycle should be re-executed)
 		tick_remain = tickEvent.when() - curTick();
 		tick_recover += tick_remain + (clockPeriod() - tick_remain % clockPeriod());
@@ -727,7 +732,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 	case (int) SimpleEnergySM::MsgType::POWER_ON:
 		// Restore procedure
 		tick_recover += cycle_restore*clockPeriod();
-		consumeEnergy(dev_name, power_cpu * cycle_restore);
+		consumeEnergy(dev_name, power_cpu[2] * cycle_restore);
 		// reschedule the next tickEvent
 		schedule(tickEvent, curTick() + tick_recover);
 		break;

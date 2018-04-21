@@ -111,10 +111,11 @@ VirtualDevice::VirtualDevice(const Params *p) :
 	// delay_remained is zeros at the beginning
 	delay_remained = 0;
 	
-	// the energy consumption of each cycle defines the cost of three modes (OFF, SLEEP, ACTIVE)
+	// the energy consumption of each cycle defines the cost of three modes (OFF, SLEEP, NORMAL, ACTIVE)
 	energy_consumed_per_cycle_vdev[0] = p->energy_consumed_per_cycle_vdev[0];
 	energy_consumed_per_cycle_vdev[1] = p->energy_consumed_per_cycle_vdev[1];
 	energy_consumed_per_cycle_vdev[2] = p->energy_consumed_per_cycle_vdev[2];
+	energy_consumed_per_cycle_vdev[3] = p->energy_consumed_per_cycle_vdev[3];
 }
 
 VirtualDevice::~VirtualDevice()

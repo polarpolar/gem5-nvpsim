@@ -64,7 +64,7 @@ class AtomicSimpleCPU(BaseSimpleCPU):
     
     fastmem = Param.Bool(False, "Access memory directly")
 		
-    power_cpu = Param.Float(1, "Energy consumption per cycle of CPU")
+    power_cpu = VectorParam.Float([], "Energy consumption per cycle of CPU")
     cycle_backup =Param.Int(1, "Cycles for CPU backup") 
     cycle_restore = Param.Int(1, "Cycles for CPU restore")
                 		

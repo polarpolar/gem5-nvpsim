@@ -71,9 +71,9 @@ print "---- deltaE = %f.\n" %(system.energy_mgmt.state_machine.thres_off_to_1 - 
 
 # CPU: basic params
 system.cpu = AtomicSimpleCPU(
-			power_cpu = 1.3, 	# nJ/cycle
-			cycle_backup = 5, 	# nJ/cycle
-			cycle_restore = 3 	# nJ/cycle
+			power_cpu = [0, 0.3, 1.3], 	# nJ/cycle
+			cycle_backup = 5, 		# nJ/cycle
+			cycle_restore = 3 		# nJ/cycle
 		)
 # CPU: slave port
 system.cpu.s_energy_port = system.energy_mgmt.m_energy_port
@@ -98,7 +98,7 @@ system.vdev0.cpu = system.cpu
 # Access address range for the device
 system.vdev0.range = system.vdev_ranges[0]
 # The energy consumption of each cycle at power-off, idle and active mode.
-system.vdev0.energy_consumed_per_cycle_vdev = [Float(0), Float(0.03), Float(0.6), Float(1.35)] 
+system.vdev0.energy_consumed_per_cycle_vdev = [Float(0), Float(0.06), Float(0.6), Float(1.35)] 
 # Delay of an active task
 system.vdev0.delay_self = '1ms'
 # Delay of the task returning interrupt
@@ -133,7 +133,7 @@ system.vdev2 = VirtualDevice()
 system.vdev2.id = 2;
 system.vdev2.cpu = system.cpu
 system.vdev2.range = system.vdev_ranges[2]
-system.vdev2.energy_consumed_per_cycle_vdev = [Float(0), Float(0.12), Float(2.4), Float(11.9)]
+system.vdev2.energy_consumed_per_cycle_vdev = [Float(0), Float(0.24), Float(2.4), Float(11.9)]
 system.vdev2.delay_self = '10us'
 system.vdev2.delay_cpu_interrupt = '10us'
 system.vdev2.delay_set = '66us'
@@ -147,7 +147,7 @@ system.vdev3 = VirtualDevice()
 system.vdev3.id = 3;
 system.vdev3.cpu = system.cpu
 system.vdev3.range = system.vdev_ranges[3]
-system.vdev3.energy_consumed_per_cycle_vdev = [Float(0), Float(0.06), Float(0.416), Float(1.46)]
+system.vdev3.energy_consumed_per_cycle_vdev = [Float(0), Float(0.26), Float(0.416), Float(1.46)]
 system.vdev3.delay_self = '500us'
 system.vdev3.delay_cpu_interrupt = '10us'
 system.vdev3.delay_set = '128us'
@@ -161,7 +161,7 @@ system.vdev4 = VirtualDevice()
 system.vdev4.id = 4;
 system.vdev4.cpu = system.cpu
 system.vdev4.range = system.vdev_ranges[4]
-system.vdev4.energy_consumed_per_cycle_vdev = [Float(0), Float(0.06), Float(0.416), Float(1.46)]
+system.vdev4.energy_consumed_per_cycle_vdev = [Float(0), Float(0.26), Float(0.416), Float(1.46)]
 system.vdev4.delay_self = '500us'
 system.vdev4.delay_cpu_interrupt = '10us'
 system.vdev4.delay_set = '128us'
@@ -175,7 +175,7 @@ system.vdev5 = VirtualDevice()
 system.vdev5.id = 5;
 system.vdev5.cpu = system.cpu
 system.vdev5.range = system.vdev_ranges[5]
-system.vdev5.energy_consumed_per_cycle_vdev = [Float(0), Float(0.06), Float(0.416), Float(1.46)]
+system.vdev5.energy_consumed_per_cycle_vdev = [Float(0), Float(0.26), Float(0.416), Float(1.46)]
 system.vdev5.delay_self = '500us'
 system.vdev5.delay_cpu_interrupt = '10us'
 system.vdev5.delay_set = '128us'
@@ -189,7 +189,7 @@ system.vdev6 = VirtualDevice()
 system.vdev6.id = 6;
 system.vdev6.cpu = system.cpu
 system.vdev6.range = system.vdev_ranges[6]
-system.vdev6.energy_consumed_per_cycle_vdev = [Float(0), Float(0.06), Float(0.416), Float(1.46)]
+system.vdev6.energy_consumed_per_cycle_vdev = [Float(0), Float(0.26), Float(0.416), Float(1.46)]
 system.vdev6.delay_self = '500us'
 system.vdev6.delay_cpu_interrupt = '10us'
 system.vdev6.delay_set = '128us'
@@ -203,7 +203,7 @@ system.vdev7 = VirtualDevice()
 system.vdev7.id = 7;
 system.vdev7.cpu = system.cpu
 system.vdev7.range = system.vdev_ranges[7]
-system.vdev7.energy_consumed_per_cycle_vdev = [Float(0), Float(0.06), Float(0.416), Float(1.46)]
+system.vdev7.energy_consumed_per_cycle_vdev = [Float(0), Float(0.26), Float(0.416), Float(1.46)]
 system.vdev7.delay_self = '500us'
 system.vdev7.delay_cpu_interrupt = '10us'
 system.vdev7.delay_set = '128us'
