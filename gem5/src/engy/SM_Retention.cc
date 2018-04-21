@@ -3,7 +3,7 @@
 // Update by tongda on 3/14/18.
 //
 
-#include "engy/SM_Retention.hh"
+#include "SM_Retention.hh"
 #include "debug/EnergyMgmt.hh"
 #include <fstream>
 

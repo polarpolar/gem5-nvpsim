@@ -1,9 +1,14 @@
+//
+// Created by lf-z on 3/13/17.
+//
+
 #ifndef SM_TWOTHRES_HH
 #define SM_TWOTHRES_HH
 
 #include "state_machine.hh"
 #include "params/SM_TwoThres.hh"
 
+/********* Two Thresholds SM ***********/
 class SM_TwoThres : public BaseEnergySM
 {
 public:

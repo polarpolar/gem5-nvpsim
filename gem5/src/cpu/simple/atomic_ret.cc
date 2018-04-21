@@ -68,6 +68,7 @@
 #include "sim/system.hh"
 #include "sim/full_system.hh"
 #include "engy/state_machine.hh"
+#include "engy/SM_Retention.hh"
 
 using namespace std;
 using namespace TheISA;
@@ -114,6 +115,11 @@ AtomicSimpleCPU::init()
 
 AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
 	: BaseSimpleCPU(p),
+
+	// Added for recovery
+	cycle_backup(p->cycle_backup),
+	cycle_restore(p->cycle_restore),
+
 	tickEvent(this), width(p->width), locked(false),
 	simulate_data_stalls(p->simulate_data_stalls),
 	simulate_inst_stalls(p->simulate_inst_stalls),
@@ -121,17 +127,21 @@ AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
 	icachePort(name() + ".icache_port", this),
 	dcachePort(name() + ".dcache_port", this),
 	fastmem(p->fastmem), dcache_access(false), dcache_latency(0),
-	ppCommit(nullptr),
+	ppCommit(nullptr)
 
-	// Added for recovery
-	power_cpu(p->power_cpu),
-	cycle_restore(p->cycle_restore),
-	cycle_backup(p->cycle_backup)
 {
 	strcpy(dev_name, "AtomicCPU");
 	_status = Idle;
 	tick_recover = 0;
 	in_interrupt = false;
+
+	// the initialization energy state: OFF
+	cpu_energy_state = EngyState::STATE_POWER_OFF;
+	
+	// the energy consumption of each cycle defines the cost of three modes (OFF, SLEEP, ACTIVE)
+	power_cpu[STATE_POWER_OFF] = p->power_cpu[STATE_POWER_OFF];
+	power_cpu[STATE_SLEEP] = p->power_cpu[STATE_SLEEP];
+	power_cpu[STATE_NORMAL] = p->power_cpu[STATE_NORMAL];
 }
 
 
@@ -525,8 +535,7 @@ AtomicSimpleCPU::tick()
 {
 	DPRINTF(SimpleCPU, "Tick\n");
 
-	in_interrupt = 0;
-
+	//in_interrupt = 0;
 	Tick latency = 0;
 
 	for (int i = 0; i < width || locked; ++i) {
@@ -554,6 +563,7 @@ AtomicSimpleCPU::tick()
 			ifetch_req.taskId(taskId());
 			setupFetchRequest(&ifetch_req);
 			fault = thread->itb->translateAtomic(&ifetch_req, tc, BaseTLB::Execute);
+		}
 
 		if (fault == NoFault) {
 			Tick icache_latency = 0;
@@ -635,7 +645,9 @@ AtomicSimpleCPU::tick()
 		latency = clockPeriod();
 
 	// energy consumption of this tick
-	consumeEnergy(dev_name, power_cpu * ticksToCycles(latency));
+	consumeEnergy(dev_name, power_cpu[cpu_energy_state] * ticksToCycles(latency));
+
+	//DPRINTF(VirtualDevice, "CPU-tick +1\n");
 
 	if (_status != Idle)
 		schedule(tickEvent, curTick() + latency);
@@ -655,55 +667,100 @@ AtomicSimpleCPU::printAddr(Addr a)
 	dcachePort.printAddr(a);
 }
 
+/****** Virtual Device Related Functions *******/
+// Interrupt reaction for vdev
+void
+AtomicSimpleCPU::virtualDeviceInterrupt(char* vdev_name, Tick delay_isa)
+{
+	//in_interrupt = 1;
+	DPRINTF(VirtualDevice, "%s calls INT, latency = %#lu\n", vdev_name, delay_isa);
 
+	Tick time = tickEvent.when();
+	if (delay_isa % clockPeriod())
+		delay_isa += clockPeriod() - delay_isa % clockPeriod();
+	time += delay_isa;
+	reschedule(tickEvent, time);
+}
+
+// The CPU-triggered virtual device recovery
+void
+AtomicSimpleCPU::virtualDeviceRecover(char* vdev_name, Tick delay_vdev_init)
+{
+	// Extension: user defined function for recovery.
+	Tick time;
+
+	// Todo: recover the virtual devices one by one.
+	//	We need to extend an vdev initialization function for CPU
+	DPRINTF(VirtualDevice, "Wait for Peripheral.\n");
+
+	// The recover_time is the maximum of the recovery of vdev-s.
+	time = tickEvent.when() - recover_time; 
+	time += recover_time >= delay_vdev_init ? recover_time : delay_vdev_init;
+	reschedule(tickEvent, time);
+}
+
+// Interface for CPU to initialize vdev.
+int
+AtomicSimpleCPU::initVdevByCPU(int vdev_id)
+{
+	// Todo: to complete
+	return 1;
+}
+
+/****** Energy Message Handler *******/
+// Todo: add a new idle tick_event for CPU to represent the idle state.
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg) 
 {
 	Tick tick_remain = 0;
 	tick_recover = 0;
-	DPRINTF(EnergyMgmt, "[AtomicNVP] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+	DPRINTF(EnergyMgmt, "[SM_Retention] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
 
-	switch(msg.type)
-	{
-	case (int) MsgType::POWER_OFF:
-		// Todo: A more reasonable solution is to make up a backup/restore event.
-		// Backup procedure
-		tick_recover += cycle_backup*clockPeriod();
-		consumeEnergy(power_cpu * cycle_backup);
-		// Uncomplete time of current task (uncompleted cycle should be re-executed)
+	// Power off: fail and completely restart
+	if (msg.type == SM_Retention::MsgType::POWER_OFF) {
+		// In state-retention strategy, Power failure means restart from the very beginning
+		// peripheral recover_time reset to zero.
+		recover_time = 0;
+		// remove the next tickEvent until power on
+		assert(tickEvent.scheduled());
+		deschedule(tickEvent);
+		// Set CPU energy state
+		cpu_energy_state = EngyState::STATE_POWER_OFF;
+	}
+
+	// Power retention: keep the state and reschedule the current operation
+	else if (msg.type == SM_Retention::MsgType::POWER_RET) {
+		// Remaining time of current tickEvent (uncompleted cycle should be re-executed)
 		tick_remain = tickEvent.when() - curTick();
 		tick_recover += tick_remain + (clockPeriod() - tick_remain % clockPeriod());
+		// peripheral recover_time reset to zero.
+		recover_time = 0;
 		// remove the next tickEvent until power on
+		assert(tickEvent.scheduled());
 		deschedule(tickEvent);
-		break;
+		// Set CPU energy state
+		cpu_energy_state = EngyState::STATE_SLEEP; 
+	}
 
-	case (int) MsgType::POWER_ON:
-		// Restore procedure
-		tick_recover += cycle_restore*clockPeriod();
-		consumeEnergy(power_cpu * cycle_restore);
-		// reschedule the next tickEvent
-		//	Todo: how to recover a virtual device ?
-		schedule(tickEvent, curTick() + tick_recover);
-		break;
+	// Power on: restart or recover
+	else if (msg.type == SM_Retention::MsgType::POWER_ON) {
+		// retention --> power on
+		if (cpu_energy_state == EngyState::STATE_SLEEP) {
+			// keep on the execution
+			schedule(tickEvent, tick_recover);
+			tick_recover  = 0;
+			// Set CPU energy state
+			cpu_energy_state = EngyState::STATE_NORMAL;
+		}
 
-	default: 
-		return 0;
+		else if (cpu_energy_state == EngyState::STATE_POWER_OFF) {
+			// Todo: restart the operation
+			// Set CPU energy state
+			cpu_energy_state = EngyState::STATE_NORMAL;
+		}
 	}
 
 	return 1;
-}
-
-void
-AtomicSimpleCPU::virtualDeviceInterrupt(Tick tick)
-{
-	//in_interrupt = 1;
-	DPRINTF(VirtualDevice, "[AtomicCPU] VDEV INT latency = %#lu\n", tick);
-
-	Tick time = tickEvent.when();
-	if (tick % clockPeriod())
-		tick += clockPeriod() - tick % clockPeriod();
-	time += tick;
-	reschedule(tickEvent, time);
 }
 
 ////////////////////////////////////////////////////////////////////////

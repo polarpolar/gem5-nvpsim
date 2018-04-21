@@ -63,11 +63,21 @@ public:
 	double power_cpu[3] = {0, 0.3, 1.3};   // nJ/cycle
 	double clkmult = 1;
 
+	enum EngyState {
+		STATE_POWER_OFF 	= 0,
+		STATE_SLEEP 		= 1,
+		STATE_NORMAL 		= 2
+	};
+
+	/** Energy modes of vdev : [OFF, SLEEP, NORMAL]; **/
+	EngyState cpu_energy_state;
+
 	// Add for parallel recovery of vdev-s. The recover time is the maximum recover time of vdev-s.
 	double recover_time = 0;
 
 	/**
-	 * When power fails during a CPU task, the CPU should record the time of the remaining task, which is defined here as lat_remain.
+	 * When power fails during a CPU task, the CPU should record the time of the remaining task.
+	 	It is previously defined here as lat_remain.
 	 */
 	Tick tick_recover;
 	/* Backup/Restore time of CPU */

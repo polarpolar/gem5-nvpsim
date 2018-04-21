@@ -1,6 +1,13 @@
+//
+// Created by tongda
+//
+//
+
 #include "SM_TwoThres.hh"
 #include "debug/EnergyMgmt.hh"
 
+
+/******* SM_TwoThres *******/
 SM_TwoThres::SM_TwoThres(const Params *p) 
     : BaseEnergySM(p),
     state(SM_TwoThres::State::STATE_POWEROFF),
