@@ -63,17 +63,20 @@ int main()
 		//periInit(gvdev5_reg);
 
 		// data read from ACC Sensor
-		for(i=1; i<=10; i++)
+		for(i=1; i<=30; i++)
 		{
 			accSense(&acc_x, &acc_y, &acc_z, acc_reg);
-			//generalVdevActive(gvdev1_reg);
+		}
+
+		for(i=1; i<=30; i++)
+		{
 			collection[6*i-4]=(unsigned char)((acc_x&0xFF00)>>8);
 			collection[6*i-3]=(unsigned char)(acc_x&0x00FF);
 			collection[6*i-2]=(unsigned char)((acc_y&0xFF00)>>8);
 			collection[6*i-1]=(unsigned char)(acc_y&0x00FF);
 			collection[6*i]=(unsigned char)((acc_z&0xFF00)>>8);
 			collection[6*i+1]=(unsigned char)(acc_z&0x00FF);
-			printf("--Collecting the %d-th acceleration data.\n", i);
+			printf("--Collecting the %d-th acceleration data.\n", i);	
 		}
 	}
 	// Data processing: FFT
@@ -86,19 +89,19 @@ int main()
 
 	
 	// transmit data from Zigbee
-	periInit(rf_reg);		// Zigbee init
-	rfTrans(rf_reg, payload);	// Zigbee transmit
+	//periInit(rf_reg);		// Zigbee init
+	//rfTrans(rf_reg, payload);	// Zigbee transmit
 	
 	printf("RF transmission completed.\n");
 	
 	printf("Complete the %d-th packet.\n", ++count);
 
+
 	// peripheral logout
 	periLogout(TMP_SENSOR_ID);
 	periLogout(ACC_SENSOR_ID);
-	periLogout(RF_ID);
 	//periLogout(RF_ID);
-	//periLogout(3); periLogout(4); periLogout(5); periLogout(6); periLogout(7);
+	//periLogout(3);	periLogout(4);	periLogout(5);	//periLogout(6);	periLogout(7);
 
 	return 0;
 }
